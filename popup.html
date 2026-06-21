@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT 问题导航</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header class="header">
+        <div class="mark" aria-hidden="true">问</div>
+        <div>
+          <p class="eyebrow">ChatGPT Navigator</p>
+          <h1>问题导航</h1>
+        </div>
+      </header>
+
+      <section class="status-card" aria-label="扩展状态">
+        <span id="statusDot" class="status-dot" aria-hidden="true"></span>
+        <div>
+          <p id="statusTitle" class="status-title">正在检查当前页面...</p>
+          <p id="statusText" class="status-text">请稍候。</p>
+        </div>
+      </section>
+
+      <section class="license-card" aria-label="授权激活">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Local License</p>
+            <h2>本机授权</h2>
+          </div>
+          <span id="licenseBadge" class="license-badge">检查中</span>
+        </div>
+
+        <label class="field-label" for="machineCode">机器码</label>
+        <div class="machine-row">
+          <input id="machineCode" class="machine-code" type="text" readonly value="正在生成...">
+          <button id="copyMachineButton" class="secondary-button" type="button">复制</button>
+        </div>
+
+        <label class="field-label" for="activationInput">激活码</label>
+        <textarea
+          id="activationInput"
+          class="activation-input"
+          rows="4"
+          placeholder="粘贴你生成的本机激活码"
+          spellcheck="false"
+        ></textarea>
+
+        <div class="license-actions">
+          <button id="activateButton" class="primary-button" type="button">激活插件</button>
+          <button id="deactivateButton" class="secondary-button" type="button" hidden>解绑本机</button>
+        </div>
+
+        <p id="licenseHint" class="license-hint">把机器码发给作者，拿到激活码后粘贴到这里。</p>
+      </section>
+
+      <button id="refreshButton" class="primary-button" type="button" disabled>
+        刷新问题列表
+      </button>
+
+      <p class="note">
+        仅在 chatgpt.com 和 chat.openai.com 生效。扩展只读取当前页面内容，不上传、不保存你的对话。
+      </p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+# Dependencies and local tooling
+node_modules/
+.cache/
+.env
+.env.*
+
+# Build, release, and generated packages
+dist/
+release/
+*.zip
+*.crx
+*.pem
+*.pfx
+*.p12
+
+# Private license material
+cqn-license-private-key.json
+**/cqn-license-private-key.json
+**/*private-key*
+**/*secret*
+**/*token*
+**/CQNLicenseGenerator.exe
+
+# Local screenshots not explicitly added to docs
+Snipaste_*.png
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+desktop.ini
