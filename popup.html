@@ -24,36 +24,17 @@
         </div>
       </section>
 
-      <section class="license-card" aria-label="授权激活">
+      <section class="info-card" aria-label="开源版本">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Local License</p>
-            <h2>本机授权</h2>
+            <p class="eyebrow">Open Source</p>
+            <h2>GPL-3.0 开源版</h2>
           </div>
-          <span id="licenseBadge" class="license-badge">检查中</span>
+          <span class="status-badge is-on">本地运行</span>
         </div>
-
-        <label class="field-label" for="machineCode">机器码</label>
-        <div class="machine-row">
-          <input id="machineCode" class="machine-code" type="text" readonly value="正在生成...">
-          <button id="copyMachineButton" class="secondary-button" type="button">复制</button>
-        </div>
-
-        <label class="field-label" for="activationInput">激活码</label>
-        <textarea
-          id="activationInput"
-          class="activation-input"
-          rows="4"
-          placeholder="粘贴你生成的本机激活码"
-          spellcheck="false"
-        ></textarea>
-
-        <div class="license-actions">
-          <button id="activateButton" class="primary-button" type="button">激活插件</button>
-          <button id="deactivateButton" class="secondary-button" type="button" hidden>解绑本机</button>
-        </div>
-
-        <p id="licenseHint" class="license-hint">把机器码发给作者，拿到激活码后粘贴到这里。</p>
+        <p class="info-text">
+          安装后即可在 ChatGPT 网页端生成问题目录。扩展只在当前页面内工作，不上传、不保存你的聊天内容。
+        </p>
       </section>
 
       <button id="refreshButton" class="primary-button" type="button" disabled>
@@ -61,7 +42,7 @@
       </button>
 
       <p class="note">
-        仅在 chatgpt.com 和 chat.openai.com 生效。扩展只读取当前页面内容，不上传、不保存你的对话。
+        仅在 chatgpt.com 和 chat.openai.com 生效。打开或刷新 ChatGPT 对话页后，右侧会出现“问题导航”。
       </p>
     </main>
 

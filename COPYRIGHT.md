@@ -1,19 +1,32 @@
-# 版权声明
+# Copyright Notice / 版权说明
 
-本项目由作者本人独立开发完成，项目源码、功能逻辑、界面设计、说明文档、展示素材以及相关发布文件的版权归作者所有。
+Copyright (c) 2026 Xu ZiHan.
 
-Copyright (c) 2026 Xu ZiHan. All rights reserved.
+本项目源码、文档、展示素材和工具代码的原始作者为 Xu ZiHan。项目采用 GNU General Public License v3.0 授权，完整条款见 `LICENSE`。
 
-## 授权说明
+## 你可以做什么
 
-本仓库当前采用 **All Rights Reserved** 策略。仓库可见、共享或后续公开，不代表作者授予任何人复制、转售、二次分发、公开发布、再授权或冒充原创的权利。
+在遵守 GPL-3.0 的前提下，你可以使用、学习、复制、修改和分发本项目，也可以发布你的修改版本。
 
-未经作者明确书面许可，禁止进行以下行为：
+## 你需要保留什么
 
-- 将本项目源码、发布包、修改版或衍生版本上传到 GitHub、Gitee、网盘、论坛、社群等公开或半公开平台。
-- 将本项目源码或发布包转卖、倒卖、批量分发，或打包进其他产品中出售。
-- 删除、修改或隐藏本项目中的作者信息、版权说明、授权说明。
-- 冒充本项目原创作者，或以自己的原创作品名义发布、宣传、销售。
-- 对项目中的授权机制进行破解、绕过、传播或批量滥用。
+- 保留原作者署名和版权声明。
+- 保留 GPL-3.0 许可证文本。
+- 分发修改版时说明你做过修改。
+- 如果分发二进制或打包版本，应按 GPL-3.0 要求提供对应源码。
 
-如需源码授权、二次开发、商业合作或批量授权，请提前与作者单独沟通确认。未经过单独书面授权的情况下，默认不授予源码使用、公开、转售或再授权权利。
+## 不应做什么
+
+请不要删除或隐藏原作者信息，不要把本项目冒充为你的独立原创作品，不要用误导性方式暗示原作者认可你的修改版或分发版本。
+
+本仓库不包含任何生产签名材料、token、证书或本地发布包。示例工具仅用于说明格式和便于审计。
+
+---
+
+This project is authored by Xu ZiHan and licensed under the GNU General Public License v3.0. See `LICENSE` for the full license text.
+
+You may use, study, copy, modify, and distribute this project under the GPL-3.0 terms.
+
+Please keep the original copyright notice, author attribution, and GPL-3.0 license text. Do not remove attribution, impersonate the original author, or imply endorsement of a modified or redistributed version.
+
+This repository does not include production signing material, tokens, certificates, or local release packages. Reference tools are included only to document formats and support auditability.

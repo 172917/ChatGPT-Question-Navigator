@@ -11,7 +11,7 @@
 
 body {
   width: 340px;
-  min-height: 430px;
+  min-height: 340px;
   margin: 0;
   background: #f6f8fb;
 }
@@ -63,24 +63,24 @@ h2 {
   line-height: 1.25;
 }
 
-.status-card {
-  display: grid;
-  grid-template-columns: 12px 1fr;
-  gap: 12px;
-  align-items: start;
+.status-card,
+.info-card {
   border: 1px solid #dce3ec;
   border-radius: 8px;
   background: #ffffff;
   padding: 14px;
 }
 
-.license-card {
+.status-card {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.info-card {
   display: grid;
   gap: 10px;
-  border: 1px solid #dce3ec;
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 14px;
 }
 
 .section-heading {
@@ -90,7 +90,7 @@ h2 {
   gap: 12px;
 }
 
-.license-badge {
+.status-badge {
   flex: 0 0 auto;
   border-radius: 999px;
   background: #eef3f7;
@@ -101,72 +101,16 @@ h2 {
   padding: 6px 8px;
 }
 
-.license-badge.is-on {
+.status-badge.is-on {
   background: rgba(16, 163, 127, 0.12);
   color: #08745d;
 }
 
-.license-badge.is-warning {
-  background: rgba(217, 119, 6, 0.12);
-  color: #9a4f04;
-}
-
-.field-label {
-  color: #556276;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.machine-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-}
-
-.machine-code,
-.activation-input {
-  width: 100%;
-  border: 1px solid #d7e0ea;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #17202e;
-  font: inherit;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.machine-code {
-  min-width: 0;
-  height: 34px;
-  padding: 0 10px;
-  font-family: Consolas, "Microsoft YaHei", monospace;
-}
-
-.activation-input {
-  min-height: 84px;
-  max-height: 120px;
-  padding: 9px 10px;
-  resize: vertical;
-  word-break: break-all;
-}
-
-.machine-code:focus,
-.activation-input:focus {
-  border-color: rgba(16, 163, 127, 0.56);
-  outline: 3px solid rgba(16, 163, 127, 0.12);
-}
-
-.license-actions {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-}
-
-.license-hint {
+.info-text {
   margin: 0;
-  color: #69778a;
-  font-size: 11px;
-  line-height: 1.5;
+  color: #647086;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .status-dot {
@@ -213,30 +157,6 @@ h2 {
   font: inherit;
   font-size: 13px;
   font-weight: 800;
-}
-
-.secondary-button {
-  min-height: 34px;
-  border: 1px solid #d7e0ea;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #304158;
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  padding: 0 10px;
-}
-
-.secondary-button:hover {
-  border-color: rgba(16, 163, 127, 0.46);
-  background: rgba(16, 163, 127, 0.08);
-}
-
-.secondary-button:disabled {
-  color: #8a96a6;
-  background: #f1f4f8;
-  cursor: not-allowed;
 }
 
 .primary-button:hover {

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ChatGPT Question Navigator",
   "version": "1.0.0",
-  "description": "在 ChatGPT 当前对话中生成你的问题导航栏，点击即可跳回对应问题。",
+  "description": "在 ChatGPT 当前对话中生成问题导航栏，点击即可跳回对应提问位置。",
   "action": {
     "default_popup": "popup.html",
     "default_title": "ChatGPT 问题导航"

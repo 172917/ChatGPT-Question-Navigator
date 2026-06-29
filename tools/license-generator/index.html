@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT Question Navigator License Generator Reference</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+        color: #17202e;
+        background: #f6f8fb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 32px;
+      }
+
+      main {
+        display: grid;
+        gap: 18px;
+        max-width: 920px;
+        margin: 0 auto;
+      }
+
+      section {
+        display: grid;
+        gap: 12px;
+        border: 1px solid #dce3ec;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 18px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      h2 {
+        font-size: 17px;
+      }
+
+      p {
+        color: #5f6d7f;
+        line-height: 1.6;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        color: #304158;
+        font-weight: 700;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        border: 1px solid #d7e0ea;
+        border-radius: 8px;
+        color: #17202e;
+        font: inherit;
+        padding: 10px;
+      }
+
+      textarea {
+        min-height: 110px;
+        resize: vertical;
+        word-break: break-all;
+      }
+
+      button {
+        min-height: 40px;
+        border: 0;
+        border-radius: 8px;
+        background: #10a37f;
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 800;
+        padding: 0 14px;
+      }
+
+      button.secondary {
+        border: 1px solid #d7e0ea;
+        background: #ffffff;
+        color: #304158;
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .warning {
+        border-left: 4px solid #d97706;
+        background: #fff8ed;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>License Generator Reference</h1>
+        <p>
+          Open-source reference for the legacy CQN license-token format. The
+          current GPL-3.0 extension does not require activation.
+        </p>
+      </header>
+
+      <section>
+        <h2>1. Generate local signing keys</h2>
+        <p class="warning">
+          This page does not contain a production signing key. Generate your own
+          key pair for testing and keep real signing material outside public git
+          history.
+        </p>
+        <div class="row">
+          <button id="generateKeys" type="button">Generate key pair</button>
+          <button id="copyPublic" class="secondary" type="button">Copy public JWK</button>
+          <button id="copySigning" class="secondary" type="button">Copy signing JWK</button>
+        </div>
+        <label>
+          Public JWK
+          <textarea id="publicJwk" spellcheck="false" readonly></textarea>
+        </label>
+        <label>
+          Signing JWK
+          <textarea id="signingJwk" spellcheck="false"></textarea>
+        </label>
+      </section>
+
+      <section>
+        <h2>2. Create a token</h2>
+        <label>
+          Machine code
+          <input id="machineCode" placeholder="CQN-XXXX-XXXX-XXXX-XXXX-XXXX">
+        </label>
+        <label>
+          Product ID
+          <input id="productId" value="chatgpt-question-navigator">
+        </label>
+        <div class="row">
+          <button id="createToken" type="button">Create token</button>
+          <button id="copyToken" class="secondary" type="button">Copy token</button>
+        </div>
+        <label>
+          Activation token
+          <textarea id="tokenOutput" spellcheck="false" readonly></textarea>
+        </label>
+      </section>
+    </main>
+
+    <script>
+      const ACTIVATION_PREFIX = "CQNLIC-";
+      const encoder = new TextEncoder();
+      let signingKey = null;
+
+      const publicJwk = document.getElementById("publicJwk");
+      const signingJwk = document.getElementById("signingJwk");
+      const machineCode = document.getElementById("machineCode");
+      const productId = document.getElementById("productId");
+      const tokenOutput = document.getElementById("tokenOutput");
+
+      function bytesToBase64Url(bytes) {
+        let binary = "";
+        bytes.forEach((byte) => {
+          binary += String.fromCharCode(byte);
+        });
+
+        return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+      }
+
+      function stableJson(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
+      async function copyText(value) {
+        if (!value) {
+          return;
+        }
+
+        await navigator.clipboard.writeText(value);
+      }
+
+      document.getElementById("generateKeys").addEventListener("click", async () => {
+        const pair = await crypto.subtle.generateKey(
+          {
+            name: "ECDSA",
+            namedCurve: "P-256"
+          },
+          true,
+          ["sign", "verify"]
+        );
+
+        signingKey = pair.privateKey;
+        publicJwk.value = stableJson(await crypto.subtle.exportKey("jwk", pair.publicKey));
+        signingJwk.value = stableJson(await crypto.subtle.exportKey("jwk", pair.privateKey));
+      });
+
+      document.getElementById("copyPublic").addEventListener("click", () => copyText(publicJwk.value));
+      document.getElementById("copySigning").addEventListener("click", () => copyText(signingJwk.value));
+      document.getElementById("copyToken").addEventListener("click", () => copyText(tokenOutput.value));
+
+      document.getElementById("createToken").addEventListener("click", async () => {
+        if (!signingKey && signingJwk.value.trim()) {
+          signingKey = await crypto.subtle.importKey(
+            "jwk",
+            JSON.parse(signingJwk.value),
+            {
+              name: "ECDSA",
+              namedCurve: "P-256"
+            },
+            false,
+            ["sign"]
+          );
+        }
+
+        if (!signingKey) {
+          tokenOutput.value = "Generate or paste a signing JWK first.";
+          return;
+        }
+
+        const payload = {
+          productId: productId.value.trim(),
+          version: 1,
+          machineCode: machineCode.value.trim().toUpperCase(),
+          licenseType: "lifetime",
+          issuedAt: new Date().toISOString()
+        };
+        const payloadBytes = encoder.encode(JSON.stringify(payload));
+        const signature = new Uint8Array(
+          await crypto.subtle.sign(
+            {
+              name: "ECDSA",
+              hash: "SHA-256"
+            },
+            signingKey,
+            payloadBytes
+          )
+        );
+
+        tokenOutput.value = `${ACTIVATION_PREFIX}${bytesToBase64Url(payloadBytes)}.${bytesToBase64Url(signature)}`;
+      });
+    </script>
+  </body>
+</html>

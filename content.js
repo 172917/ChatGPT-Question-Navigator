@@ -95,21 +95,6 @@
     return;
   }
 
-  async function getLicenseStatus() {
-    try {
-      return await chrome.runtime.sendMessage({ type: "CQN_LICENSE_STATUS" });
-    } catch {
-      return {
-        authorized: false
-      };
-    }
-  }
-
-  const licenseStatus = await getLicenseStatus();
-  if (!licenseStatus?.authorized) {
-    return;
-  }
-
   let entries = [];
   let entryKeys = new Set();
   let collapsed = false;
