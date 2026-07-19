@@ -45,7 +45,7 @@ https://github.com/172917/ChatGPT-Question-Navigator
 - GPL-3.0 開源
 
 Music:
-Grand Project - Wonders of the Earth
+Royalty-free track supplied by the project owner: `grand_project-wonders-of-the-earth-550792.mp3`.
 
 ## Tags
 

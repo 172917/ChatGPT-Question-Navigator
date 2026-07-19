@@ -13,6 +13,9 @@ release/
 *.pfx
 *.p12
 
+# Keep the repository-sized product video; exclude the large local master.
+marketing/video/exports/question-navigator-demo-master-1080p.mp4
+
 # Private license material
 cqn-license-private-key.json
 **/cqn-license-private-key.json
