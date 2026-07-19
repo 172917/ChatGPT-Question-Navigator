@@ -23,6 +23,18 @@ ChatGPT 网页端的长对话目录并不是每次都会稳定出现。即使对
 
 ![ChatGPT Question Navigator 中文使用截图](docs/images/usage-screenshot.png)
 
+### 更多界面 / More views
+
+以下图片均可点击查看高清原图。
+
+<p align="center">
+  <a href="docs/images/popup-zh-CN.png"><img src="docs/images/popup-zh-CN.png" alt="中文扩展弹窗" width="31%"></a>
+  <a href="docs/images/popup-en.png"><img src="docs/images/popup-en.png" alt="English extension popup" width="31%"></a>
+  <a href="docs/images/label-manager-en.png"><img src="docs/images/label-manager-en.png" alt="Custom label manager" width="27%"></a>
+</p>
+
+<p align="center"><sub>中文扩展弹窗 · English popup · 自定义标签管理</sub></p>
+
 ## 功能
 
 - 只在 `chatgpt.com` 和 `chat.openai.com` 页面注入脚本。
