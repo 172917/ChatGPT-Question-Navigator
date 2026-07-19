@@ -231,6 +231,14 @@ The extension reads only content already loaded in the current ChatGPT page. It 
 
 It locally stores panel preferences, automatic-classification and language settings, global label definitions, and conversation-scoped organizer metadata. Persisted organizer metadata contains stable identifiers, favorite flags, fixed category IDs, and label IDs—never question text, quoted snippets, or search terms.
 
+## OpenAI Build Week
+
+This project was built and iterated in Codex using GPT-5.6 as the coding model. Codex accelerated live inspection of ChatGPT's changing page structure, implementation of deterministic bilingual classification, stable message-order reconciliation for delayed history loading, screenshot-driven UI fixes, and automated validation across JavaScript, Manifest V3, localization, storage privacy, Chrome, and Edge.
+
+GPT-5.6 and Codex were used to reason about, implement, debug, and verify the extension. They are not called by the installed extension at runtime: classification and organization remain deterministic and local, and no API key is required.
+
+Judges can test the project without rebuilding it: download or clone this repository, load the repository root as an unpacked extension in Chrome or Edge, then refresh any conversation on `https://chatgpt.com/`. The complete installation and usage instructions are above.
+
 ## Development and validation
 
 Important files:
