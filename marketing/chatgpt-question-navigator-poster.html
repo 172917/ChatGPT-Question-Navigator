@@ -4,6 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ChatGPT 问题导航项目展示海报</title>
+    <script>
+      if (new URLSearchParams(location.search).get("export") === "1") {
+        document.documentElement.classList.add("is-export");
+      }
+    </script>
     <style>
       :root {
         --ink: #111827;
@@ -35,6 +40,18 @@
         display: grid;
         place-items: center;
         padding: 28px;
+      }
+
+      html.is-export,
+      html.is-export body {
+        width: 1080px;
+        height: 1350px;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      html.is-export body {
+        padding: 0;
       }
 
       .poster {
@@ -280,9 +297,9 @@
 
       .nav-card {
         position: absolute;
-        right: 34px;
-        top: 168px;
-        width: 310px;
+        right: 18px;
+        top: 130px;
+        width: 350px;
         border: 1px solid rgba(16, 163, 127, 0.22);
         border-radius: 22px;
         background:
@@ -323,13 +340,57 @@
 
       .nav-list {
         display: grid;
-        gap: 10px;
+        gap: 8px;
         padding: 14px;
+      }
+
+      .nav-tools {
+        display: grid;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        padding: 12px 14px;
+      }
+
+      .nav-search {
+        border: 1px solid rgba(17, 24, 39, 0.12);
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #98a2b3;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 9px 11px;
+      }
+
+      .nav-filters {
+        display: flex;
+        gap: 6px;
+      }
+
+      .nav-filter {
+        border-radius: 999px;
+        background: #eef3f7;
+        color: #526174;
+        font-size: 10px;
+        font-weight: 900;
+        padding: 6px 9px;
+      }
+
+      .nav-filter.active {
+        background: var(--mint);
+        color: #ffffff;
+      }
+
+      .group-label {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
 
       .nav-item {
         display: grid;
-        grid-template-columns: 36px 1fr;
+        grid-template-columns: 36px 1fr auto;
         gap: 10px;
         align-items: start;
         border: 1px solid rgba(16, 163, 127, 0.16);
@@ -365,6 +426,12 @@
         font-weight: 700;
         line-height: 1.35;
         padding: 7px 8px;
+      }
+
+      .star {
+        color: var(--amber);
+        font-size: 18px;
+        font-weight: 900;
       }
 
       .feature-band {
@@ -483,17 +550,17 @@
             <div>
               <h1 class="headline">
                 长对话<br>
-                <span class="accent">一键跳回</span><br>
-                提问位置
+                <span class="accent">自动整理</span><br>
+                随时找回
               </h1>
               <p class="subhead">
-                自动生成「我的问题」目录，点击问题直接定位原消息，长聊天复盘、查资料、改方案更省时间。
+                自动分类、搜索、收藏每个问题，点击直接定位原消息，让长聊天真正成为可回溯的工作空间。
               </p>
 
               <div class="showcase-strip" aria-label="项目特性">
                 <div class="showcase-box primary">
                   <p class="showcase-label">项目定位</p>
-                  <p class="showcase-value">本地运行<br>辅助导航</p>
+                  <p class="showcase-value">本地整理<br>隐私优先</p>
                 </div>
                 <div class="showcase-box">
                   <p class="showcase-label">适配范围</p>
@@ -534,28 +601,34 @@
                   <div class="mini-mark">问</div>
                   <div>
                     <p class="nav-title">问题导航</p>
-                    <p class="nav-count">已找到 12 个问题</p>
+                    <p class="nav-count">12 个问题 · 3 个收藏</p>
+                  </div>
+                </div>
+                <div class="nav-tools">
+                  <div class="nav-search">⌕ 搜索问题或引用…</div>
+                  <div class="nav-filters">
+                    <span class="nav-filter active">全部 12</span>
+                    <span class="nav-filter">收藏 3</span>
+                    <span class="nav-filter">代码 4</span>
                   </div>
                 </div>
                 <div class="nav-list">
+                  <div class="group-label">资料 · Research</div>
                   <div class="nav-item">
                     <div class="index">01</div>
                     <div>
                       <p class="nav-text">总结这段资料的重点</p>
                     </div>
+                    <div class="star">★</div>
                   </div>
+                  <div class="group-label">代码 · Code</div>
                   <div class="nav-item">
                     <div class="index">02</div>
                     <div>
-                      <p class="nav-text">引用这段内容解释一下</p>
-                      <p class="quote">同时显示引用片段</p>
+                      <p class="nav-text">修复这段代码的报错</p>
+                      <p class="quote">同时搜索引用片段</p>
                     </div>
-                  </div>
-                  <div class="nav-item">
-                    <div class="index">03</div>
-                    <div>
-                      <p class="nav-text">回到方案修改问题</p>
-                    </div>
+                    <div class="star">☆</div>
                   </div>
                 </div>
               </aside>
@@ -565,31 +638,31 @@
           <section class="feature-band" aria-label="功能亮点">
             <div class="feature">
               <div class="feature-icon">↗</div>
-              <h3>点击定位</h3>
-              <p>从目录直接跳到原提问位置。</p>
+              <h3>自动分类</h3>
+              <p>代码、方案、资料、待办自动整理。</p>
             </div>
             <div class="feature">
-              <div class="feature-icon">”</div>
-              <h3>引用识别</h3>
-              <p>引用片段与问题一起显示。</p>
+              <div class="feature-icon">★</div>
+              <h3>搜索收藏</h3>
+              <p>快速筛选并保留关键问题。</p>
             </div>
             <div class="feature">
-              <div class="feature-icon">↕</div>
-              <h3>自由布局</h3>
-              <p>支持拖动、缩放和折叠。</p>
+              <div class="feature-icon">↗</div>
+              <h3>一键定位</h3>
+              <p>从索引直接跳回原提问。</p>
             </div>
             <div class="feature">
-              <div class="feature-icon">✓</div>
-              <h3>本地运行</h3>
-              <p>不上传、不保存聊天内容。</p>
+              <div class="feature-icon">文/A</div>
+              <h3>中英切换</h3>
+              <p>自动识别，也可手动切换。</p>
             </div>
           </section>
         </main>
 
         <footer class="footer">
           <div>
-            <p class="cta">为 ChatGPT 长对话增加一个问题目录</p>
-            <p class="privacy">适配 chatgpt.com / chat.openai.com</p>
+            <p class="cta">把 ChatGPT 长对话变成可回溯的工作索引</p>
+            <p class="privacy">本地运行 · 不上传聊天内容 · 中英双语</p>
           </div>
           <div class="repo-badge">
             <strong>项目展示</strong>

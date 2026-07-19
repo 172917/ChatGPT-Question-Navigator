@@ -11,8 +11,8 @@
       <header class="header">
         <div class="mark" aria-hidden="true">问</div>
         <div>
-          <p class="eyebrow">ChatGPT Navigator</p>
-          <h1>问题导航</h1>
+          <p id="eyebrow" class="eyebrow">ChatGPT Navigator</p>
+          <h1 id="pageTitle">问题导航</h1>
         </div>
       </header>
 
@@ -28,24 +28,43 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Open Source</p>
-            <h2>GPL-3.0 开源版</h2>
+            <h2 id="localTitle">本地智能整理</h2>
           </div>
-          <span class="status-badge is-on">本地运行</span>
+          <span id="localBadge" class="status-badge is-on">本地运行</span>
         </div>
-        <p class="info-text">
-          安装后即可在 ChatGPT 网页端生成问题目录。扩展只在当前页面内工作，不上传、不保存你的聊天内容。
+        <p id="localText" class="info-text">
+          自动分类、搜索和收藏都在本机完成；不会上传或远程保存聊天内容。
         </p>
+        <label class="setting-row" for="autoClassificationToggle">
+          <span>
+            <strong id="autoTitle">自动分类</strong>
+            <small id="autoText">新问题会按内容自动分组。</small>
+          </span>
+          <input id="autoClassificationToggle" type="checkbox">
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+        <p id="labelCount" class="label-count">0 个全局标签</p>
+        <label class="language-row" for="languageSelect">
+          <span id="languageLabel">界面语言</span>
+          <select id="languageSelect">
+            <option value="auto">自动</option>
+            <option value="zh-CN">简体中文</option>
+            <option value="en">English</option>
+          </select>
+        </label>
       </section>
 
       <button id="refreshButton" class="primary-button" type="button" disabled>
         刷新问题列表
       </button>
 
-      <p class="note">
+      <p id="note" class="note">
         仅在 chatgpt.com 和 chat.openai.com 生效。打开或刷新 ChatGPT 对话页后，右侧会出现“问题导航”。
       </p>
     </main>
 
+    <script src="i18n.js"></script>
+    <script src="settings.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

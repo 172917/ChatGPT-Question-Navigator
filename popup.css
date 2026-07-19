@@ -2,7 +2,7 @@
   color-scheme: light;
   background: #f6f8fb;
   color: #182233;
-  font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+  font-family: "Bahnschrift", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
 }
 
 * {
@@ -111,6 +111,113 @@ h2 {
   color: #647086;
   font-size: 12px;
   line-height: 1.6;
+}
+
+.language-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #e7ecf2;
+  color: #58677b;
+  font-size: 12px;
+  font-weight: 800;
+  padding-top: 10px;
+}
+
+.setting-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #e7ecf2;
+  cursor: pointer;
+  padding-top: 10px;
+}
+
+.setting-row > span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.setting-row strong {
+  color: #344156;
+  font-size: 12px;
+}
+
+.setting-row small {
+  color: #778397;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.setting-row input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.switch-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: #aab3c0;
+  transition: background 150ms ease;
+}
+
+.switch-track::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+  content: "";
+  transition: transform 150ms ease;
+}
+
+.setting-row input:checked + .switch-track {
+  background: #10a37f;
+}
+
+.setting-row input:checked + .switch-track::after {
+  transform: translateX(16px);
+}
+
+.setting-row input:focus-visible + .switch-track {
+  box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.14);
+}
+
+.label-count {
+  margin: -3px 0 0;
+  color: #08745d;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.language-row select {
+  min-width: 122px;
+  min-height: 32px;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  outline: none;
+  background: #f8fafc;
+  color: #243247;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 7px;
+}
+
+.language-row select:focus-visible {
+  border-color: #10a37f;
+  box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.13);
 }
 
 .status-dot {

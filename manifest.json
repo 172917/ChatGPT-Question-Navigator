@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Question Navigator",
-  "version": "1.0.0",
-  "description": "在 ChatGPT 当前对话中生成问题导航栏，点击即可跳回对应提问位置。",
+  "name": "__MSG_extensionName__",
+  "version": "1.2.1",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "zh_CN",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ChatGPT 问题导航"
+    "default_title": "__MSG_actionTitle__"
   },
   "permissions": [
     "activeTab",
@@ -22,6 +23,9 @@
         "https://chat.openai.com/*"
       ],
       "js": [
+        "i18n.js",
+        "organizer.js",
+        "settings.js",
         "content.js"
       ],
       "run_at": "document_idle"

@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT Question Navigator 16:9 Promo Video</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #111827;
+        --muted: #667085;
+        --mint: #10a37f;
+        --mint-dark: #08745d;
+        --blue: #2563eb;
+        --line: rgba(17, 24, 39, 0.14);
+        --panel: rgba(255, 255, 255, 0.86);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 80% 12%, rgba(37, 99, 235, 0.2), transparent 280px),
+          radial-gradient(circle at 14% 80%, rgba(16, 163, 127, 0.16), transparent 300px),
+          linear-gradient(135deg, #f9fff9 0%, #eef9f4 45%, #f7fbff 100%);
+        color: var(--ink);
+        font-family: "Microsoft YaHei", "DengXian", "Segoe UI", sans-serif;
+      }
+
+      .page {
+        display: grid;
+        gap: 18px;
+        width: min(1180px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 24px 0;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 12px;
+        box-shadow: 0 18px 44px rgba(17, 24, 39, 0.08);
+      }
+
+      .title {
+        display: grid;
+        gap: 2px;
+      }
+
+      .title strong {
+        font-size: 15px;
+      }
+
+      .title span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      button {
+        min-height: 38px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--mint);
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 800;
+        padding: 0 14px;
+      }
+
+      button:hover {
+        background: var(--mint-dark);
+      }
+
+      button.secondary {
+        border: 1px solid #d7e0ea;
+        background: #ffffff;
+        color: #304158;
+      }
+
+      button.secondary:hover {
+        border-color: rgba(16, 163, 127, 0.48);
+        background: rgba(16, 163, 127, 0.08);
+      }
+
+      button:disabled {
+        background: #a6b0bf;
+        cursor: not-allowed;
+      }
+
+      .stage-wrap {
+        overflow: hidden;
+        border: 1px solid rgba(17, 24, 39, 0.14);
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: 0 30px 80px rgba(17, 24, 39, 0.18);
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #f7fbff;
+      }
+
+      .status {
+        min-height: 18px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="toolbar" aria-label="视频控制">
+        <div class="title">
+          <strong>ChatGPT Question Navigator 宣传视频</strong>
+          <span>1920 x 1080 / 20 秒 / MP3 音乐 / WebM & MP4 导出</span>
+        </div>
+        <div class="actions">
+          <button id="playButton" type="button">播放预览</button>
+          <button id="restartButton" class="secondary" type="button">重播</button>
+          <button id="exportButton" class="secondary" type="button">导出 WebM</button>
+          <button id="exportMp4Button" class="secondary" type="button">导出 MP4</button>
+        </div>
+      </section>
+
+      <section class="stage-wrap" aria-label="视频画面">
+        <canvas id="stage" width="1920" height="1080"></canvas>
+      </section>
+
+      <p id="status" class="status">素材加载中...</p>
+    </main>
+
+    <script>
+      const WIDTH = 1920;
+      const HEIGHT = 1080;
+      const DURATION = 20;
+      const FPS = 60;
+      const posterUrl = "../chatgpt-question-navigator-poster.png";
+      const screenshotUrl = "../../docs/images/usage-screenshot.png";
+      const musicUrl = "assets/grand_project-wonders-of-the-earth-550792.mp3";
+      const MUSIC_START_SECONDS = 30;
+
+      const canvas = document.getElementById("stage");
+      const ctx = canvas.getContext("2d");
+      const playButton = document.getElementById("playButton");
+      const restartButton = document.getElementById("restartButton");
+      const exportButton = document.getElementById("exportButton");
+      const exportMp4Button = document.getElementById("exportMp4Button");
+      const statusText = document.getElementById("status");
+
+      let startTime = 0;
+      let rafId = 0;
+      let isPlaying = false;
+      let audioCtx = null;
+      let activeAudioNodes = [];
+      let activeAudioElements = [];
+      let musicMetadataLoaded = false;
+      const images = {};
+
+      function loadImage(name, src) {
+        return new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => {
+            images[name] = image;
+            resolve(image);
+          };
+          image.onerror = reject;
+          image.src = src;
+        });
+      }
+
+      function loadMusicMetadata() {
+        return new Promise((resolve) => {
+          const audio = new Audio();
+          audio.preload = "metadata";
+          audio.onloadedmetadata = () => {
+            musicMetadataLoaded = true;
+            resolve(audio.duration);
+          };
+          audio.onerror = () => {
+            musicMetadataLoaded = false;
+            resolve(0);
+          };
+          audio.src = musicUrl;
+        });
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function easeOutCubic(value) {
+        return 1 - Math.pow(1 - clamp(value, 0, 1), 3);
+      }
+
+      function easeInOut(value) {
+        const x = clamp(value, 0, 1);
+        return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+      }
+
+      function sceneProgress(time, start, end) {
+        return clamp((time - start) / (end - start), 0, 1);
+      }
+
+      function drawRoundedRect(x, y, width, height, radius) {
+        const r = Math.min(radius, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + width, y, x + width, y + height, r);
+        ctx.arcTo(x + width, y + height, x, y + height, r);
+        ctx.arcTo(x, y + height, x, y, r);
+        ctx.arcTo(x, y, x + width, y, r);
+        ctx.closePath();
+      }
+
+      function fillRoundedRect(x, y, width, height, radius, fillStyle) {
+        drawRoundedRect(x, y, width, height, radius);
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+      }
+
+      function strokeRoundedRect(x, y, width, height, radius, strokeStyle, lineWidth = 2) {
+        drawRoundedRect(x, y, width, height, radius);
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+      }
+
+      function drawBackground(time) {
+        const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+        gradient.addColorStop(0, "#fcfff8");
+        gradient.addColorStop(0.48, "#eef9f4");
+        gradient.addColorStop(1, "#f7fbff");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        ctx.save();
+        ctx.globalAlpha = 0.55;
+        ctx.strokeStyle = "rgba(17, 24, 39, 0.05)";
+        ctx.lineWidth = 2;
+        const offset = (time * 12) % 64;
+        for (let x = -64 + offset; x <= WIDTH; x += 64) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, HEIGHT);
+          ctx.stroke();
+        }
+        for (let y = -64 + offset; y <= HEIGHT; y += 64) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(WIDTH, y);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalAlpha = 0.18;
+        ctx.strokeStyle = "#10a37f";
+        ctx.lineWidth = 46;
+        ctx.beginPath();
+        ctx.arc(1540, 980, 420 + Math.sin(time * 0.7) * 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawBrand(x, y, scale = 1) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        fillRoundedRect(0, 0, 74, 74, 18, "#10a37f");
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "900 34px 'Microsoft YaHei', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("问", 37, 38);
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#667085";
+        ctx.font = "800 24px 'Microsoft YaHei', sans-serif";
+        ctx.fillText("ChatGPT Navigator", 96, 26);
+        ctx.fillStyle = "#111827";
+        ctx.font = "900 42px 'Microsoft YaHei', sans-serif";
+        ctx.fillText("ChatGPT 问题导航", 96, 66);
+        ctx.restore();
+      }
+
+      function drawBrowserShell(x, y, width, height, alpha = 1) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.shadowColor = "rgba(17, 24, 39, 0.16)";
+        ctx.shadowBlur = 46;
+        ctx.shadowOffsetY = 24;
+        fillRoundedRect(x, y, width, height, 30, "rgba(255,255,255,0.82)");
+        ctx.shadowColor = "transparent";
+        strokeRoundedRect(x, y, width, height, 30, "rgba(17,24,39,0.14)", 2);
+        ctx.fillStyle = "#ff5f57";
+        ctx.beginPath();
+        ctx.arc(x + 46, y + 42, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffbd2e";
+        ctx.beginPath();
+        ctx.arc(x + 76, y + 42, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#28c840";
+        ctx.beginPath();
+        ctx.arc(x + 106, y + 42, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(17,24,39,0.1)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y + 76);
+        ctx.lineTo(x + width, y + 76);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawChatStack(x, y, width, count, progress) {
+        for (let i = 0; i < count; i += 1) {
+          const appear = easeOutCubic(progress * 1.35 - i * 0.12);
+          if (appear <= 0) {
+            continue;
+          }
+          const isUser = i % 2 === 0;
+          const bubbleWidth = isUser ? width * 0.62 : width * 0.72;
+          const bx = isUser ? x + width - bubbleWidth : x;
+          const by = y + i * 86 - progress * 70;
+          ctx.save();
+          ctx.globalAlpha = appear * 0.95;
+          fillRoundedRect(bx, by, bubbleWidth, 58, 18, isUser ? "#e7f8f2" : "#f2f4f7");
+          ctx.fillStyle = "rgba(17,24,39,0.16)";
+          fillRoundedRect(bx + 22, by + 19, bubbleWidth - 56, 8, 99, ctx.fillStyle);
+          fillRoundedRect(bx + 22, by + 35, bubbleWidth * 0.52, 8, 99, ctx.fillStyle);
+          ctx.restore();
+        }
+      }
+
+      function drawNavCard(x, y, scale, alpha = 1) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.globalAlpha = alpha;
+        ctx.shadowColor = "rgba(16, 24, 40, 0.18)";
+        ctx.shadowBlur = 46;
+        ctx.shadowOffsetY = 24;
+        fillRoundedRect(0, 0, 360, 460, 24, "rgba(255,255,255,0.99)");
+        ctx.shadowColor = "transparent";
+        strokeRoundedRect(0, 0, 360, 460, 24, "rgba(16,163,127,0.32)", 2);
+        fillRoundedRect(0, 0, 360, 84, 24, "rgba(238,252,247,0.99)");
+        fillRoundedRect(22, 21, 42, 42, 11, "#10a37f");
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "900 22px 'Microsoft YaHei', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("问", 43, 43);
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#17202e";
+        ctx.font = "900 24px 'Microsoft YaHei', sans-serif";
+        ctx.fillText("问题导航", 78, 39);
+        ctx.fillStyle = "#667085";
+        ctx.font = "800 16px 'Microsoft YaHei', sans-serif";
+        ctx.fillText("12 个问题 · 3 个收藏", 78, 61);
+
+        fillRoundedRect(22, 98, 316, 42, 12, "#f8fafc");
+        strokeRoundedRect(22, 98, 316, 42, 12, "rgba(17,24,39,0.12)", 2);
+        ctx.fillStyle = "#98a2b3";
+        ctx.font = "800 14px 'Microsoft YaHei', sans-serif";
+        ctx.fillText("⌕  搜索问题或引用…", 40, 124);
+
+        const filters = [
+          ["全部 12", 22, 82, true],
+          ["收藏 3", 112, 76, false],
+          ["代码 4", 196, 72, false]
+        ];
+        filters.forEach(([label, x, width, active]) => {
+          fillRoundedRect(x, 150, width, 30, 15, active ? "#10a37f" : "#eef3f7");
+          ctx.fillStyle = active ? "#ffffff" : "#526174";
+          ctx.font = "900 12px 'Microsoft YaHei', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(label, x + width / 2, 170);
+        });
+        ctx.textAlign = "left";
+
+        const items = [
+          ["01", "总结这段资料的重点", "资料 · Research", "★"],
+          ["02", "修复这段代码的报错", "代码 · Code", "☆"]
+        ];
+        items.forEach((item, index) => {
+          const itemYPositions = [215, 330];
+          const iy = itemYPositions[index];
+          const itemHeight = 92;
+          const accent = index === 0 ? "#0891b2" : "#2563eb";
+          fillRoundedRect(22, iy, 316, itemHeight, 16, "rgba(248,250,252,0.99)");
+          strokeRoundedRect(22, iy, 316, itemHeight, 16, accent, 3);
+          fillRoundedRect(40, iy + 16, 46, 34, 10, "#ffffff");
+          ctx.fillStyle = accent;
+          ctx.font = "900 18px 'Microsoft YaHei', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(item[0], 63, iy + 39);
+          ctx.textAlign = "left";
+          ctx.fillStyle = "#17202e";
+          ctx.font = "900 18px 'Microsoft YaHei', sans-serif";
+          ctx.fillText(item[1], 104, iy + 38);
+          fillRoundedRect(104, iy + 58, 144, 23, 8, "#ffffff");
+          ctx.fillStyle = accent;
+          ctx.font = "800 12px 'Microsoft YaHei', sans-serif";
+          ctx.fillText(item[2], 116, iy + 75);
+          ctx.fillStyle = item[3] === "★" ? "#d97706" : "#94a3b8";
+          ctx.font = "900 23px 'Microsoft YaHei', sans-serif";
+          ctx.fillText(item[3], 296, iy + 42);
+        });
+        ctx.restore();
+      }
+
+      function drawHeadline(text, subtext, x, y, progress) {
+        const p = easeOutCubic(progress);
+        ctx.save();
+        ctx.translate(x - 80 + p * 80, y);
+        ctx.globalAlpha = p;
+        ctx.fillStyle = "#111827";
+        ctx.font = "900 82px 'Microsoft YaHei', sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        const lines = text.split("\n");
+        lines.forEach((line, index) => {
+          ctx.fillStyle = line.includes("问题导航") ? "#08745d" : "#111827";
+          ctx.fillText(line, 0, index * 94);
+        });
+        ctx.fillStyle = "#344054";
+        ctx.font = "800 34px 'Microsoft YaHei', sans-serif";
+        wrapText(subtext, 0, lines.length * 94 + 32, 720, 48);
+        ctx.restore();
+      }
+
+      function drawBilingualHeadline(english, chinese, subtext, x, y, progress) {
+        const p = easeOutCubic(progress);
+        ctx.save();
+        ctx.translate(x - 80 + p * 80, y);
+        ctx.globalAlpha = p;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+
+        ctx.fillStyle = "#111827";
+        ctx.font = "900 78px 'Segoe UI', 'Microsoft YaHei', sans-serif";
+        const englishLines = english.split("\n");
+        englishLines.forEach((line, index) => {
+          ctx.fillStyle = line.includes("Question Navigator") || line.includes("Jump Back")
+            ? "#08745d"
+            : "#111827";
+          ctx.fillText(line, 0, index * 88);
+        });
+
+        const zhY = englishLines.length * 88 + 18;
+        ctx.fillStyle = "#1d2939";
+        ctx.font = "900 38px 'Microsoft YaHei', sans-serif";
+        ctx.fillText(chinese, 0, zhY);
+
+        ctx.fillStyle = "#344054";
+        ctx.font = "800 28px 'Segoe UI', 'Microsoft YaHei', sans-serif";
+        wrapText(subtext, 0, zhY + 58, 760, 42);
+        ctx.restore();
+      }
+
+      function wrapText(text, x, y, maxWidth, lineHeight) {
+        const chars = [...text];
+        let line = "";
+        let currentY = y;
+        chars.forEach((char) => {
+          const test = line + char;
+          if (ctx.measureText(test).width > maxWidth && line) {
+            ctx.fillText(line, x, currentY);
+            line = char;
+            currentY += lineHeight;
+          } else {
+            line = test;
+          }
+        });
+        if (line) {
+          ctx.fillText(line, x, currentY);
+        }
+      }
+
+      function drawCaption(text, progress) {
+        const p = easeOutCubic(progress);
+        ctx.save();
+        ctx.globalAlpha = p;
+        fillRoundedRect(360, 904, 1200, 86, 22, "rgba(17, 24, 39, 0.86)");
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "900 32px 'Microsoft YaHei', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, 960, 947);
+        ctx.restore();
+      }
+
+      function drawBilingualCaption(english, chinese, progress) {
+        const p = easeOutCubic(progress);
+        ctx.save();
+        ctx.globalAlpha = p;
+        fillRoundedRect(310, 886, 1300, 112, 24, "rgba(17, 24, 39, 0.88)");
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "900 34px 'Segoe UI', 'Microsoft YaHei', sans-serif";
+        ctx.fillText(english, 960, 930);
+        ctx.fillStyle = "rgba(214, 251, 239, 0.95)";
+        ctx.font = "800 24px 'Microsoft YaHei', sans-serif";
+        ctx.fillText(chinese, 960, 968);
+        ctx.restore();
+      }
+
+      function drawImageCover(image, x, y, width, height, radius = 22) {
+        const scale = Math.max(width / image.width, height / image.height);
+        const sw = width / scale;
+        const sh = height / scale;
+        const sx = (image.width - sw) / 2;
+        const sy = (image.height - sh) / 2;
+        ctx.save();
+        drawRoundedRect(x, y, width, height, radius);
+        ctx.clip();
+        ctx.drawImage(image, sx, sy, sw, sh, x, y, width, height);
+        ctx.restore();
+      }
+
+      function drawImageContain(image, x, y, width, height, radius = 22) {
+        const scale = Math.min(width / image.width, height / image.height);
+        const dw = image.width * scale;
+        const dh = image.height * scale;
+        const dx = x + (width - dw) / 2;
+        const dy = y + (height - dh) / 2;
+        ctx.save();
+        drawRoundedRect(dx, dy, dw, dh, radius);
+        ctx.clip();
+        ctx.drawImage(image, dx, dy, dw, dh);
+        ctx.restore();
+      }
+
+      function drawScene(time) {
+        drawBackground(time);
+        drawBrand(108, 80, 0.9);
+
+        if (time < 4) {
+          const p = sceneProgress(time, 0, 4);
+          drawBilingualHeadline(
+            "Long chats get messy.\nFinding questions takes time.",
+            "长对话越聊越长，回头找问题很费时间。",
+            "For research, study, coding, and planning, every scroll back costs attention.",
+            120,
+            236,
+            p
+          );
+          drawBrowserShell(1080, 178, 620, 690, easeOutCubic(p));
+          drawChatStack(1138, 320, 500, 8, p);
+          drawBilingualCaption(
+            "Long conversations need a better way back.",
+            "长对话需要一个更稳定的回看入口。",
+            sceneProgress(time, 0.2, 1.2)
+          );
+          return;
+        }
+
+        if (time < 9) {
+          const p = sceneProgress(time, 4, 9);
+          drawBilingualHeadline(
+            "Every question\nfinds its place.",
+            "每个问题自动变成可整理的本地索引。",
+            "Code, solutions, research, to-dos, and everything else — organized on your device.",
+            120,
+            236,
+            p
+          );
+          drawBrowserShell(1050, 150, 680, 730, 1);
+          drawChatStack(1100, 300, 540, 6, 1);
+          drawNavCard(1320, 245, 1.08, 0.88 + 0.12 * easeOutCubic(p));
+          drawBilingualCaption(
+            "Questions become a local working index.",
+            "问题自动分类，聊天内容不离开本机。",
+            sceneProgress(time, 4.2, 5.2)
+          );
+          return;
+        }
+
+        if (time < 15) {
+          const p = sceneProgress(time, 9, 15);
+          drawImageCover(images.screenshot, 120, 150, 1680, 760, 28);
+          ctx.save();
+          ctx.globalAlpha = 0.72;
+          ctx.fillStyle = "rgba(255,255,255,0.72)";
+          ctx.fillRect(0, 0, WIDTH, HEIGHT);
+          ctx.restore();
+          drawImageCover(images.screenshot, 134, 170, 700, 740, 26);
+          strokeRoundedRect(134, 170, 700, 740, 26, "rgba(16,163,127,0.5)", 5);
+          drawNavCard(1030, 242, 1.16, 0.9 + 0.1 * easeOutCubic(p));
+          const pulse = Math.sin(time * 8) * 0.5 + 0.5;
+          ctx.save();
+          ctx.globalAlpha = 0.7;
+          ctx.strokeStyle = "#10a37f";
+          ctx.lineWidth = 6 + pulse * 4;
+          ctx.beginPath();
+          ctx.moveTo(820, 468);
+          ctx.bezierCurveTo(920, 420, 950, 420, 1030, 430);
+          ctx.stroke();
+          ctx.restore();
+          fillRoundedRect(928 + pulse * 8, 396 + pulse * 3, 52, 52, 26, "#111827");
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "900 34px 'Microsoft YaHei', sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("↗", 954 + pulse * 8, 422 + pulse * 3);
+          drawBilingualCaption(
+            "Organize, search, favorite, and jump back.",
+            "自动分类、搜索、收藏，再一键跳回原问题。",
+            sceneProgress(time, 9.2, 10.4)
+          );
+          return;
+        }
+
+        const p = sceneProgress(time, 15, 20);
+        drawImageContain(images.poster, 1040, 100, 650, 812, 26);
+        drawBilingualHeadline(
+          "Question Navigator\nfor ChatGPT",
+          "把长对话变成可回溯的工作索引。",
+          "Local-first, bilingual, open-source, and built for Chrome / Edge.",
+          120,
+          238,
+          p
+        );
+        const tags = ["Local-first", "中文 / English", "Chrome / Edge"];
+        tags.forEach((tag, index) => {
+          const tagP = easeOutCubic(p * 1.4 - index * 0.18);
+          ctx.save();
+          ctx.globalAlpha = tagP;
+          const tagWidth = index === 1 ? 300 : 236;
+          const tagX = [126, 406, 780][index];
+          const y = 620;
+          fillRoundedRect(tagX, y, tagWidth, 74, 20, index === 1 ? "#111827" : "rgba(255,255,255,0.86)");
+          strokeRoundedRect(tagX, y, tagWidth, 74, 20, "rgba(16,163,127,0.22)", 2);
+          ctx.fillStyle = index === 1 ? "#ffffff" : "#08745d";
+          ctx.font = "900 25px 'Microsoft YaHei', sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(tag, tagX + tagWidth / 2, y + 38);
+          ctx.restore();
+        });
+        drawBilingualCaption(
+          "Auto categories / Search / Favorites / Bilingual",
+          "自动分类 / 搜索 / 收藏 / 中英切换",
+          sceneProgress(time, 15.2, 16.2)
+        );
+      }
+
+      function renderAt(time) {
+        drawScene(clamp(time, 0, DURATION));
+      }
+
+      function stopPlayback() {
+        isPlaying = false;
+        cancelAnimationFrame(rafId);
+        stopAudio();
+        playButton.textContent = "播放预览";
+      }
+
+      function startPlayback(reset = false) {
+        if (reset || !startTime) {
+          startTime = performance.now();
+        } else {
+          const currentTime = Number(canvas.dataset.time || 0);
+          startTime = performance.now() - currentTime * 1000;
+        }
+        isPlaying = true;
+        playButton.textContent = "暂停";
+        startAudio(false).catch((error) => {
+          console.warn("[CQN Promo] Preview music failed.", error);
+        });
+        const loop = () => {
+          const time = (performance.now() - startTime) / 1000;
+          canvas.dataset.time = String(time);
+          renderAt(time);
+          if (time >= DURATION) {
+            stopPlayback();
+            renderAt(DURATION);
+            return;
+          }
+          rafId = requestAnimationFrame(loop);
+        };
+        loop();
+      }
+
+      function stopAudio() {
+        activeAudioElements.forEach((audio) => {
+          try {
+            audio.pause();
+            audio.src = "";
+            audio.load();
+          } catch {
+            // Already stopped.
+          }
+        });
+        activeAudioElements = [];
+
+        activeAudioNodes.forEach((node) => {
+          try {
+            node.stop?.();
+            node.disconnect?.();
+          } catch {
+            // Already stopped.
+          }
+        });
+        activeAudioNodes = [];
+      }
+
+      function scheduleMusic(context, output, offset = 0) {
+        const now = context.currentTime + offset;
+        const master = context.createGain();
+        const compressor = context.createDynamicsCompressor();
+        const filter = context.createBiquadFilter();
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.exponentialRampToValueAtTime(0.22, now + 1.2);
+        master.gain.setValueAtTime(0.22, now + DURATION - 1.4);
+        master.gain.exponentialRampToValueAtTime(0.0001, now + DURATION);
+        filter.type = "lowpass";
+        filter.frequency.value = 6800;
+        filter.Q.value = 0.6;
+        compressor.threshold.value = -20;
+        compressor.knee.value = 18;
+        compressor.ratio.value = 4;
+        compressor.attack.value = 0.012;
+        compressor.release.value = 0.18;
+        master.connect(filter).connect(compressor).connect(output);
+        activeAudioNodes.push(master, filter, compressor);
+
+        function envelope(gain, start, peak, hold, release, level) {
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.exponentialRampToValueAtTime(level, start + peak);
+          gain.gain.setValueAtTime(level * 0.82, start + peak + hold);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + peak + hold + release);
+        }
+
+        function addTone(freq, start, duration, type, level, destination = master, detune = 0) {
+          const osc = context.createOscillator();
+          const gain = context.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, start);
+          osc.detune.value = detune;
+          envelope(gain, start, 0.035, Math.max(0.02, duration * 0.58), duration * 0.36, level);
+          osc.connect(gain).connect(destination);
+          osc.start(start);
+          osc.stop(start + duration + 0.08);
+          activeAudioNodes.push(osc, gain);
+        }
+
+        function addNoise(start, duration, level, destination = master) {
+          const length = Math.max(1, Math.floor(context.sampleRate * duration));
+          const buffer = context.createBuffer(1, length, context.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < length; i += 1) {
+            data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+          }
+          const source = context.createBufferSource();
+          const gain = context.createGain();
+          const highpass = context.createBiquadFilter();
+          highpass.type = "highpass";
+          highpass.frequency.value = 4800;
+          gain.gain.setValueAtTime(level, start);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+          source.buffer = buffer;
+          source.connect(highpass).connect(gain).connect(destination);
+          source.start(start);
+          source.stop(start + duration);
+          activeAudioNodes.push(source, gain, highpass);
+        }
+
+        const beat = 0.5;
+        const chords = [
+          [261.63, 329.63, 392.0, 493.88],
+          [220.0, 261.63, 329.63, 392.0],
+          [174.61, 220.0, 261.63, 329.63],
+          [196.0, 246.94, 293.66, 392.0]
+        ];
+        const melody = [659.25, 587.33, 523.25, 587.33, 659.25, 783.99, 739.99, 659.25];
+        const bassRoots = [65.41, 55.0, 43.65, 49.0];
+
+        for (let bar = 0; bar < 10; bar += 1) {
+          const chord = chords[bar % chords.length];
+          const barStart = now + bar * 2;
+          const padGain = context.createGain();
+          const padFilter = context.createBiquadFilter();
+          padGain.gain.value = 0.44;
+          padFilter.type = "lowpass";
+          padFilter.frequency.value = 1500;
+          padFilter.Q.value = 0.8;
+          padGain.connect(padFilter).connect(master);
+          activeAudioNodes.push(padGain, padFilter);
+
+          chord.forEach((freq, index) => {
+            addTone(freq, barStart, 1.95, "sine", 0.045, padGain, index % 2 ? 5 : -5);
+            addTone(freq * 2, barStart + 0.01, 1.88, "triangle", 0.018, padGain, index % 2 ? -7 : 7);
+          });
+
+          addTone(bassRoots[bar % bassRoots.length], barStart, 1.7, "sine", 0.16);
+          addTone(bassRoots[bar % bassRoots.length] * 2, barStart + 1.0, 0.7, "triangle", 0.08);
+        }
+
+        for (let step = 0; step < 40; step += 1) {
+          const start = now + step * beat;
+          const freq = melody[step % melody.length] * (step % 16 > 11 ? 0.5 : 1);
+          addTone(freq, start + 0.04, 0.28, "triangle", step % 4 === 0 ? 0.06 : 0.045);
+          if (step % 2 === 1) {
+            addTone(freq * 1.5, start + 0.18, 0.18, "sine", 0.025);
+          }
+        }
+
+        for (let step = 0; step < 40; step += 1) {
+          const start = now + step * beat;
+          if (step % 2 === 0) {
+            addTone(58, start, 0.2, "sine", 0.24);
+            addTone(116, start, 0.08, "triangle", 0.08);
+          }
+          addNoise(start + 0.25, 0.045, step % 4 === 3 ? 0.045 : 0.026);
+        }
+      }
+
+      async function startAudio(forExport, destination, preferMp3 = true) {
+        stopAudio();
+        if (preferMp3 && musicMetadataLoaded && !destination) {
+          try {
+            const audio = new Audio(musicUrl);
+            audio.preload = "auto";
+            audio.volume = 0.82;
+            await new Promise((resolve, reject) => {
+              audio.onloadedmetadata = resolve;
+              audio.onerror = () => reject(new Error("MP3 failed to load."));
+            });
+            audio.currentTime = MUSIC_START_SECONDS;
+            await new Promise((resolve) => {
+              const seekTimer = window.setTimeout(resolve, 800);
+              audio.onseeked = () => {
+                window.clearTimeout(seekTimer);
+                resolve();
+              };
+            });
+            await audio.play();
+            activeAudioElements.push(audio);
+            window.setTimeout(() => {
+              if (activeAudioElements.includes(audio)) {
+                audio.pause();
+              }
+            }, DURATION * 1000);
+            return null;
+          } catch (error) {
+            console.warn("[CQN Promo] Direct MP3 preview failed, fallback to generated music.", error);
+            stopAudio();
+          }
+        }
+
+        const Context = window.AudioContext || window.webkitAudioContext;
+        if (!Context) {
+          return null;
+        }
+        if (!audioCtx || audioCtx.state === "closed") {
+          audioCtx = new Context();
+        }
+        if (audioCtx.state !== "running") {
+          await Promise.race([
+            audioCtx.resume().catch(() => undefined),
+            new Promise((resolve) => window.setTimeout(resolve, 900))
+          ]);
+        }
+
+        if (preferMp3 && musicMetadataLoaded) {
+          try {
+            const audio = new Audio(musicUrl);
+            audio.preload = "auto";
+            audio.volume = forExport ? 0.72 : 0.82;
+            await new Promise((resolve, reject) => {
+              audio.onloadedmetadata = resolve;
+              audio.onerror = () => reject(new Error("MP3 failed to load."));
+            });
+            audio.currentTime = MUSIC_START_SECONDS;
+
+            if (destination) {
+              const source = audioCtx.createMediaElementSource(audio);
+              const gain = audioCtx.createGain();
+              gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.9, audioCtx.currentTime + 0.8);
+              gain.gain.setValueAtTime(0.9, audioCtx.currentTime + DURATION - 1.4);
+              gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + DURATION);
+              source.connect(gain);
+              gain.connect(destination);
+              activeAudioNodes.push(source, gain);
+            }
+
+            await new Promise((resolve, reject) => {
+              const seekTimer = window.setTimeout(resolve, 800);
+              audio.onseeked = () => {
+                window.clearTimeout(seekTimer);
+                resolve();
+              };
+              audio.onerror = () => reject(new Error("MP3 failed to load."));
+            });
+
+            await audio.play();
+            activeAudioElements.push(audio);
+            window.setTimeout(() => {
+              if (activeAudioElements.includes(audio)) {
+                audio.pause();
+              }
+            }, DURATION * 1000);
+            return audioCtx;
+          } catch (error) {
+            console.warn("[CQN Promo] MP3 music failed, fallback to generated music.", error);
+            stopAudio();
+          }
+        }
+
+        const output = destination || audioCtx.destination;
+        scheduleMusic(audioCtx, output, forExport ? 0.05 : 0);
+        return audioCtx;
+      }
+
+      async function addMusicTrackToRecording(stream) {
+        if (!musicMetadataLoaded) {
+          return false;
+        }
+
+        try {
+          const audio = new Audio(musicUrl);
+          audio.preload = "auto";
+          audio.volume = 0.82;
+          await new Promise((resolve, reject) => {
+            audio.onloadedmetadata = resolve;
+            audio.onerror = () => reject(new Error("MP3 failed to load."));
+          });
+          audio.currentTime = MUSIC_START_SECONDS;
+          await new Promise((resolve) => {
+            const seekTimer = window.setTimeout(resolve, 800);
+            audio.onseeked = () => {
+              window.clearTimeout(seekTimer);
+              resolve();
+            };
+          });
+
+          const audioStream = audio.captureStream?.() || audio.mozCaptureStream?.();
+          if (!audioStream) {
+            throw new Error("Audio captureStream is not supported.");
+          }
+
+          audioStream.getAudioTracks().forEach((track) => stream.addTrack(track));
+          await audio.play();
+          activeAudioElements.push(audio);
+          window.setTimeout(() => {
+            if (activeAudioElements.includes(audio)) {
+              audio.pause();
+            }
+          }, DURATION * 1000);
+          return true;
+        } catch (error) {
+          console.warn("[CQN Promo] MP3 capture failed, fallback to generated music.", error);
+          stopAudio();
+          return false;
+        }
+      }
+
+      function getRecordingType(format) {
+        if (format === "mp4") {
+          const candidates = [
+            'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+            'video/mp4;codecs="avc1.42E01E"',
+            "video/mp4"
+          ];
+          return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+        }
+
+        return MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+          ? "video/webm;codecs=vp9,opus"
+          : "video/webm";
+      }
+
+      async function exportVideo(format = "webm") {
+        const activeButton = format === "mp4" ? exportMp4Button : exportButton;
+        activeButton.disabled = true;
+        exportButton.disabled = true;
+        exportMp4Button.disabled = true;
+        stopPlayback();
+        renderAt(0);
+        const label = format.toUpperCase();
+        statusText.textContent = `正在导出 ${label}，约 20 秒...`;
+
+        const stream = canvas.captureStream(FPS);
+        const hasCapturedMusic = await addMusicTrackToRecording(stream);
+        const Context = window.AudioContext || window.webkitAudioContext;
+        let exportAudio = null;
+        if (!hasCapturedMusic && Context) {
+          if (!audioCtx || audioCtx.state === "closed") {
+            audioCtx = new Context();
+          }
+          exportAudio = audioCtx.createMediaStreamDestination();
+          await startAudio(true, exportAudio, false);
+          exportAudio.stream.getAudioTracks().forEach((track) => stream.addTrack(track));
+        }
+
+        const chunks = [];
+        const mimeType = getRecordingType(format);
+        if (!mimeType) {
+          throw new Error(`当前浏览器不支持直接导出 ${label}。`);
+        }
+        const recorder = new MediaRecorder(stream, {
+          mimeType,
+          videoBitsPerSecond: 9000000
+        });
+
+        recorder.ondataavailable = (event) => {
+          if (event.data?.size) {
+            chunks.push(event.data);
+          }
+        };
+
+        const done = new Promise((resolve) => {
+          recorder.onstop = resolve;
+        });
+
+        recorder.start();
+        const exportStart = performance.now();
+        await new Promise((resolve) => {
+          const step = () => {
+            const time = (performance.now() - exportStart) / 1000;
+            renderAt(time);
+            if (time >= DURATION) {
+              renderAt(DURATION);
+              resolve();
+              return;
+            }
+            requestAnimationFrame(step);
+          };
+          step();
+        });
+        recorder.stop();
+        await done;
+
+        stream.getTracks().forEach((track) => track.stop());
+        stopAudio();
+
+        const blob = new Blob(chunks, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `promo-16x9.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1200);
+        statusText.textContent = `导出完成：promo-16x9.${format}，大小约 ${(blob.size / 1024 / 1024).toFixed(1)} MB。`;
+        exportButton.disabled = false;
+        exportMp4Button.disabled = false;
+      }
+
+      playButton.addEventListener("click", () => {
+        if (isPlaying) {
+          stopPlayback();
+          return;
+        }
+        startPlayback(false);
+      });
+
+      restartButton.addEventListener("click", () => {
+        stopPlayback();
+        canvas.dataset.time = "0";
+        startPlayback(true);
+      });
+
+      exportButton.addEventListener("click", () => {
+        exportVideo("webm").catch((error) => {
+          statusText.textContent = `导出失败：${error.message}`;
+          exportButton.disabled = false;
+          exportMp4Button.disabled = false;
+          stopAudio();
+        });
+      });
+
+      exportMp4Button.addEventListener("click", () => {
+        exportVideo("mp4").catch((error) => {
+          statusText.textContent = `导出失败：${error.message}`;
+          exportButton.disabled = false;
+          exportMp4Button.disabled = false;
+          stopAudio();
+        });
+      });
+
+      Promise.all([
+        loadImage("poster", posterUrl),
+        loadImage("screenshot", screenshotUrl),
+        loadMusicMetadata()
+      ])
+        .then(([, , musicBytes]) => {
+          const musicText = musicBytes
+            ? `音乐已加载，将从 ${MUSIC_START_SECONDS}s 开始。`
+            : "音乐加载失败，将回退到浏览器合成音乐。";
+          const protocolNote = location.protocol === "file:"
+            ? " 当前为 file 页面，导出带音乐的 MP4 时建议通过本地 HTTP 服务打开。"
+            : "";
+          statusText.textContent = `素材已加载。${musicText}${protocolNote} 点击播放预览，或直接导出 WebM / MP4。`;
+          renderAt(0);
+        })
+        .catch((error) => {
+          statusText.textContent = `素材加载失败：${error.message}`;
+        });
+    </script>
+  </body>
+</html>

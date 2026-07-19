@@ -1,0 +1,11 @@
+{
+  "extensionName": {
+    "message": "ChatGPT 问题导航"
+  },
+  "extensionDescription": {
+    "message": "在 ChatGPT 长对话中自动分类、搜索、收藏、自定义标签，并一键跳回原提问位置。"
+  },
+  "actionTitle": {
+    "message": "打开 ChatGPT 问题导航"
+  }
+}

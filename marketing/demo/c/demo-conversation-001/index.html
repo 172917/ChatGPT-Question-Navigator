@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT Question Navigator v1.2.1 Demo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+        background: #ffffff;
+        color: #171717;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #ffffff; }
+
+      .app {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 260px;
+        border-right: 1px solid #e7e7e7;
+        background: #f9f9f9;
+        padding: 18px 14px;
+      }
+
+      .sidebar-brand { font-size: 19px; font-weight: 900; }
+      .sidebar-new {
+        margin-top: 24px;
+        border-radius: 12px;
+        background: #ececec;
+        font-size: 13px;
+        font-weight: 800;
+        padding: 12px;
+      }
+      .sidebar-label { margin: 28px 8px 8px; color: #777; font-size: 11px; }
+      .sidebar-item { border-radius: 9px; font-size: 13px; padding: 10px 9px; }
+      .sidebar-item.active { background: #e7e7e7; font-weight: 800; }
+
+      main { grid-column: 2; min-width: 0; }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid #ededed;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(16px);
+        padding: 16px 24px;
+      }
+      .topbar strong { font-size: 15px; }
+      .topbar span { color: #707070; font-size: 13px; }
+
+      .conversation { width: min(820px, calc(100% - 420px)); margin: 0 auto; padding: 46px 0 140px; }
+      article { margin: 0 0 32px; scroll-margin-top: 90px; }
+      article[data-turn="user"] { display: flex; justify-content: flex-end; }
+      article[data-turn="assistant"] { display: flex; justify-content: flex-start; }
+      .message { max-width: 78%; font-size: 15px; line-height: 1.75; }
+      [data-turn="user"] .message { border-radius: 20px; background: #f0f0f0; padding: 12px 17px; }
+      [data-turn="assistant"] .message { padding: 0 6px; }
+      pre { overflow: auto; border-radius: 12px; background: #171717; color: #f8fafc; padding: 14px; }
+      blockquote { margin: 0 0 10px; border-left: 3px solid #10a37f; color: #4b635c; padding-left: 12px; }
+
+      .composer {
+        position: fixed;
+        right: 50%;
+        bottom: 24px;
+        width: min(720px, calc(100vw - 740px));
+        min-width: 420px;
+        transform: translateX(50%);
+        border: 1px solid #dedede;
+        border-radius: 26px;
+        background: #ffffff;
+        box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
+        color: #8a8a8a;
+        padding: 18px 22px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="sidebar-brand">ChatGPT</div>
+        <div class="sidebar-new">＋ 新聊天</div>
+        <p class="sidebar-label">今天</p>
+        <div class="sidebar-item active">长对话工作索引演示</div>
+        <div class="sidebar-item">运动控制资料整理</div>
+        <div class="sidebar-item">WPF 架构讨论</div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <strong>ChatGPT Question Navigator v1.2.1 · 自动分类开关与自定义标签</strong>
+          <span>本地演示 · Local demo</span>
+        </header>
+
+        <section class="conversation">
+          <article data-turn="user" data-turn-id="turn-research-1" data-testid="conversation-turn-1">
+            <div class="message" data-message-author-role="user">帮我查找 PVT 轨迹规划的论文、官方资料和参考链接</div>
+          </article>
+          <article data-turn="assistant" data-testid="conversation-turn-2">
+            <div class="message" data-message-author-role="assistant">可以从经典轨迹规划、五轴同步和跟随误差三个方向建立检索式。</div>
+          </article>
+          <article data-turn="user" data-turn-id="turn-solution-1" data-testid="conversation-turn-3">
+            <div class="message" data-message-author-role="user">给我设计一个 WPF、C# 和 STM32 协同工作的整体架构方案</div>
+          </article>
+          <article data-turn="assistant" data-testid="conversation-turn-4">
+            <div class="message" data-message-author-role="assistant">建议把实时控制、业务编排和可视化界面拆成三个清晰边界。</div>
+          </article>
+          <article data-turn="user" data-turn-id="turn-code-1" data-testid="conversation-turn-5">
+            <div class="message" data-message-author-role="user">这段 C# 代码为什么出现 NullReferenceException？<pre><code>var title = currentItem.Name.Trim();</code></pre></div>
+          </article>
+          <article data-turn="assistant" data-testid="conversation-turn-6">
+            <div class="message" data-message-author-role="assistant">需要检查 currentItem、Name 以及数据绑定初始化顺序。</div>
+          </article>
+          <article data-turn="user" data-turn-id="turn-todo-1" data-testid="conversation-turn-7">
+            <div class="message" data-message-author-role="user">整理下一步行动项、检查清单和本周待办</div>
+          </article>
+          <article data-turn="assistant" data-testid="conversation-turn-8">
+            <div class="message" data-message-author-role="assistant">我会按照优先级、负责人和验收结果整理。</div>
+          </article>
+          <article data-turn="user" data-turn-id="turn-quote-1" data-testid="conversation-turn-9">
+            <div class="message" data-message-author-role="user"><blockquote>实时控制必须留在本地设备闭环中。</blockquote>这句话具体是什么意思？</div>
+          </article>
+          <article data-turn="assistant" data-testid="conversation-turn-10">
+            <div class="message" data-message-author-role="assistant">意思是网络服务可以协调任务，但不能替代毫秒级运动控制。</div>
+          </article>
+          <article data-turn="user" data-turn-id="turn-research-2" data-testid="conversation-turn-11">
+            <div class="message" data-message-author-role="user">Find the official documentation and benchmark sources for this API</div>
+          </article>
+          <article data-turn="assistant" data-testid="conversation-turn-12">
+            <div class="message" data-message-author-role="assistant">I would start with the official API guide and its published benchmark methodology.</div>
+          </article>
+          <article data-turn="user" data-turn-id="turn-solution-2" data-testid="conversation-turn-13">
+            <div class="message" data-message-author-role="user">比较两个实现方案的优缺点，并给出选型建议</div>
+          </article>
+          <article data-turn="assistant" data-testid="conversation-turn-14">
+            <div class="message" data-message-author-role="assistant">可以从维护成本、实时性、部署复杂度和迁移风险四个维度比较。</div>
+          </article>
+        </section>
+
+        <div class="composer">有问题，尽管问</div>
+      </main>
+    </div>
+
+    <script>
+      const storageData = JSON.parse(localStorage.getItem("cqn-demo-storage") || "{}");
+      const storageListeners = new Set();
+      globalThis.chrome = {
+        i18n: { getUILanguage: () => navigator.language || "zh-CN" },
+        storage: {
+          local: {
+            async get(key) {
+              if (typeof key === "string") return { [key]: storageData[key] };
+              return { ...storageData };
+            },
+            async set(next) {
+              const changes = {};
+              Object.entries(next).forEach(([key, value]) => {
+                changes[key] = { oldValue: storageData[key], newValue: value };
+                storageData[key] = value;
+              });
+              localStorage.setItem("cqn-demo-storage", JSON.stringify(storageData));
+              storageListeners.forEach((listener) => listener(changes, "local"));
+            }
+          },
+          onChanged: { addListener: (listener) => storageListeners.add(listener) }
+        },
+        runtime: { onMessage: { addListener() {} } }
+      };
+
+      const demoParameters = new URLSearchParams(location.search);
+      if (demoParameters.has("narrow")) {
+        localStorage.setItem(
+          "chatgpt-question-navigator-layout-v1",
+          JSON.stringify({
+            left: Math.max(8, window.innerWidth - 318),
+            top: 88,
+            width: 300,
+            height: 560
+          })
+        );
+      }
+
+      if (demoParameters.has("quote-test")) {
+        const quote = document.querySelector("[data-turn-id='turn-quote-1'] blockquote");
+        quote.textContent = "线性模型是：z = Az + Br，状态变量与控制输入需要在每一个采样周期重新计算，并验证英文 Supercalifragilisticexpialidocious 不会露出半行文字。";
+      }
+
+      if (demoParameters.has("delayed-order")) {
+        const delayedQuestion = document.querySelector("[data-turn-id='turn-solution-1']");
+        const delayedAnchor = delayedQuestion.nextElementSibling;
+        delayedQuestion.remove();
+
+        const loadButton = document.createElement("button");
+        loadButton.id = "loadDelayedQuestion";
+        loadButton.type = "button";
+        loadButton.textContent = "加载延迟问题 2";
+        Object.assign(loadButton.style, {
+          position: "fixed",
+          left: "280px",
+          bottom: "20px",
+          zIndex: "20",
+          border: "1px solid #10a37f",
+          borderRadius: "10px",
+          background: "#ffffff",
+          color: "#08765d",
+          padding: "10px 14px",
+          cursor: "pointer"
+        });
+        loadButton.addEventListener("click", () => {
+          delayedAnchor.parentElement.insertBefore(delayedQuestion, delayedAnchor);
+          window.__chatgptQuestionNavigator?.refresh();
+          loadButton.disabled = true;
+          loadButton.textContent = "延迟问题已加载";
+        });
+        document.body.appendChild(loadButton);
+      }
+    </script>
+    <script src="../../../../i18n.js"></script>
+    <script src="../../../../organizer.js"></script>
+    <script src="../../../../settings.js"></script>
+    <script src="../../../../content.js"></script>
+  </body>
+</html>

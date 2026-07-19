@@ -4,13 +4,16 @@
   const HIGHLIGHT_STYLE_ID = "chatgpt-question-navigator-highlight";
   const HIGHLIGHT_CLASS = "chatgpt-question-navigator-target";
   const LAYOUT_STORAGE_KEY = "chatgpt-question-navigator-layout-v1";
+  const LEGACY_ORGANIZER_STORAGE_PREFIX = "cqn-organizer-state-v1";
+  const ORGANIZER_STORAGE_PREFIX = "cqn-organizer-state-v2";
+  const ORGANIZER_STORAGE_VERSION = 2;
   const MAX_LABEL_LENGTH = 120;
   const MAX_QUOTE_LENGTH = 90;
   const PERIODIC_REFRESH_MS = 2000;
-  const DEFAULT_WIDTH = 320;
-  const DEFAULT_HEIGHT = 460;
-  const MIN_WIDTH = 260;
-  const MIN_HEIGHT = 260;
+  const DEFAULT_WIDTH = 360;
+  const DEFAULT_HEIGHT = 560;
+  const MIN_WIDTH = 300;
+  const MIN_HEIGHT = 340;
   const EDGE_PADDING = 8;
   const COLLAPSED_SIZE = 52;
   const SELECTORS = {
@@ -95,15 +98,36 @@
     return;
   }
 
+  const i18n = globalThis.CQN_I18N;
+  const organizer = globalThis.CQN_ORGANIZER;
+  const settings = globalThis.CQN_SETTINGS;
+  if (!i18n || !organizer || !settings) {
+    console.error("[ChatGPT Question Navigator] Shared modules are unavailable.");
+    return;
+  }
+
+  await Promise.all([i18n.initialize(), settings.initialize()]);
+
   let entries = [];
-  let entryKeys = new Set();
   let collapsed = false;
+  let currentFilter = "all";
+  let searchQuery = "";
   let refreshTimer = null;
   let periodicRefreshTimer = null;
+  let languageUnsubscribe = null;
+  let settingsUnsubscribe = null;
+  let autoClassificationEnabled = settings.getAutoClassificationEnabled();
+  let customLabels = settings.getLabels();
+  let labelsExpanded = false;
+  let labelManagerOpen = false;
+  let batchMode = false;
+  let selectedEntryKeys = new Set();
   let lastUrl = location.href;
   let lastSignature = "";
   let pendingDomChange = true;
   let warnedEmptyMessageKeys = new Set();
+  let conversationStorageKey = getConversationStorageKey();
+  let organizerState = createEmptyOrganizerState();
   let layout = loadLayout();
 
   const host = document.createElement("div");
@@ -122,9 +146,14 @@
         --cqn-border: rgba(24, 34, 48, 0.13);
         --cqn-accent: #10a37f;
         --cqn-accent-soft: rgba(16, 163, 127, 0.12);
+        --cqn-code: #2563eb;
+        --cqn-solution: #7c3aed;
+        --cqn-research: #0891b2;
+        --cqn-todo: #d97706;
+        --cqn-other: #64748b;
         --cqn-shadow: 0 18px 46px rgba(16, 24, 40, 0.18);
         color-scheme: light;
-        font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+        font-family: "Bahnschrift", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
       }
 
       *,
@@ -138,6 +167,7 @@
         z-index: 2147483647;
         display: flex;
         flex-direction: column;
+        container-type: inline-size;
         width: 320px;
         height: 460px;
         min-width: 260px;
@@ -145,7 +175,7 @@
         max-width: calc(100vw - 16px);
         max-height: calc(100vh - 16px);
         border: 1px solid var(--cqn-border);
-        border-radius: 8px;
+        border-radius: 14px;
         background:
           linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.36)),
           var(--cqn-bg);
@@ -179,7 +209,7 @@
         align-items: center;
         gap: 10px;
         flex: 0 0 auto;
-        padding: 12px 12px 11px;
+        padding: 13px 13px 12px;
         border-bottom: 1px solid var(--cqn-border);
         background:
           linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(244, 251, 248, 0.94) 100%);
@@ -206,7 +236,7 @@
         width: 26px;
         height: 26px;
         place-items: center;
-        border-radius: 7px;
+        border-radius: 9px;
         background: var(--cqn-accent);
         color: #ffffff;
         font-size: 14px;
@@ -340,17 +370,15 @@
       .body {
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
-        gap: 10px;
+        gap: 11px;
         flex: 1 1 auto;
         min-height: 0;
         overflow: hidden;
-        padding: 10px;
+        padding: 11px;
       }
 
       .tools {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        display: grid;
         gap: 8px;
       }
 
@@ -358,6 +386,386 @@
         margin: 0;
         color: var(--cqn-muted);
         font-size: 11px;
+      }
+
+      .search-shell {
+        position: relative;
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr) 24px;
+        align-items: center;
+        min-height: 38px;
+        border: 1px solid var(--cqn-border);
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--cqn-panel) 92%, var(--cqn-accent) 8%);
+        padding: 0 7px 0 9px;
+        transition: border-color 140ms ease, box-shadow 140ms ease;
+      }
+
+      .search-shell:focus-within {
+        border-color: color-mix(in srgb, var(--cqn-accent) 60%, transparent);
+        box-shadow: 0 0 0 3px var(--cqn-accent-soft);
+      }
+
+      .search-icon {
+        color: var(--cqn-muted);
+        font-size: 16px;
+        line-height: 1;
+      }
+
+      .search-input {
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--cqn-text);
+        font: inherit;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .search-input::placeholder {
+        color: color-mix(in srgb, var(--cqn-muted) 78%, transparent);
+      }
+
+      .clear-search {
+        display: grid;
+        width: 24px;
+        height: 24px;
+        place-items: center;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: var(--cqn-muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 16px;
+      }
+
+      .clear-search[hidden] {
+        display: none;
+      }
+
+      .clear-search:hover {
+        background: var(--cqn-accent-soft);
+        color: var(--cqn-text);
+      }
+
+      .filter-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+        overflow: visible;
+        padding: 1px;
+      }
+
+      .label-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .label-filter-row:empty {
+        display: none;
+      }
+
+      .label-filter-chip {
+        display: inline-flex;
+        min-width: 0;
+        max-width: 132px;
+        min-height: 25px;
+        align-items: center;
+        gap: 5px;
+        border: 1px solid color-mix(in srgb, var(--label-color) 34%, var(--cqn-border));
+        border-radius: 7px;
+        background: color-mix(in srgb, var(--cqn-panel) 94%, var(--label-color) 6%);
+        color: var(--cqn-text);
+        cursor: pointer;
+        font: inherit;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 4px 7px;
+      }
+
+      .label-filter-chip.is-active {
+        border-color: var(--label-color);
+        background: var(--label-color);
+        color: #ffffff;
+      }
+
+      .label-filter-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .organize-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .auto-control {
+        display: inline-flex;
+        min-width: 0;
+        align-items: center;
+        gap: 7px;
+        color: var(--cqn-text);
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .auto-control input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .switch-track {
+        position: relative;
+        flex: 0 0 auto;
+        width: 30px;
+        height: 17px;
+        border-radius: 999px;
+        background: #a5adba;
+        transition: background 150ms ease;
+      }
+
+      .switch-track::after {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.24);
+        content: "";
+        transition: transform 150ms ease;
+      }
+
+      .auto-control input:checked + .switch-track {
+        background: var(--cqn-accent);
+      }
+
+      .auto-control input:checked + .switch-track::after {
+        transform: translateX(13px);
+      }
+
+      .auto-control input:focus-visible + .switch-track {
+        box-shadow: 0 0 0 3px var(--cqn-accent-soft);
+      }
+
+      .organize-actions {
+        display: flex;
+        gap: 5px;
+      }
+
+      .compact-button {
+        min-height: 26px;
+        border: 1px solid var(--cqn-border);
+        border-radius: 7px;
+        background: var(--cqn-panel);
+        color: var(--cqn-muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 0 7px;
+      }
+
+      .compact-button:hover,
+      .compact-button.is-active {
+        border-color: color-mix(in srgb, var(--cqn-accent) 45%, var(--cqn-border));
+        background: var(--cqn-accent-soft);
+        color: var(--cqn-text);
+      }
+
+      .label-manager,
+      .batch-toolbar {
+        display: grid;
+        gap: 8px;
+        border: 1px solid var(--cqn-border);
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--cqn-panel) 96%, var(--cqn-accent) 4%);
+        padding: 9px;
+      }
+
+      .label-manager[hidden],
+      .batch-toolbar[hidden] {
+        display: none;
+      }
+
+      .manager-heading {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .manager-title {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .manager-hint,
+      .manager-message {
+        margin: 2px 0 0;
+        color: var(--cqn-muted);
+        font-size: 9px;
+        line-height: 1.45;
+      }
+
+      .manager-message.is-error {
+        color: #b42318;
+      }
+
+      .label-create-row,
+      .manager-label-row,
+      .batch-actions {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .label-input,
+      .batch-label-select {
+        min-width: 0;
+        min-height: 28px;
+        flex: 1;
+        border: 1px solid var(--cqn-border);
+        border-radius: 7px;
+        outline: 0;
+        background: var(--cqn-panel);
+        color: var(--cqn-text);
+        font: inherit;
+        font-size: 10px;
+        padding: 0 7px;
+      }
+
+      .label-input:focus,
+      .batch-label-select:focus {
+        border-color: var(--cqn-accent);
+        box-shadow: 0 0 0 2px var(--cqn-accent-soft);
+      }
+
+      .manager-labels {
+        display: grid;
+        max-height: 152px;
+        gap: 5px;
+        overflow: auto;
+      }
+
+      .label-color-dot {
+        flex: 0 0 auto;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--label-color);
+      }
+
+      .manager-label-row .label-input {
+        background: transparent;
+      }
+
+      .batch-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        color: var(--cqn-muted);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .filter-chip {
+        display: inline-flex;
+        width: 100%;
+        min-width: 0;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        min-height: 28px;
+        border: 1px solid var(--cqn-border);
+        border-radius: 999px;
+        background: var(--cqn-panel);
+        color: var(--cqn-muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 0 4px;
+        white-space: nowrap;
+      }
+
+      .filter-label {
+        min-width: 0;
+      }
+
+      .filter-chip:hover,
+      .filter-chip:focus-visible {
+        border-color: color-mix(in srgb, var(--cqn-accent) 48%, var(--cqn-border));
+        color: var(--cqn-text);
+        outline: none;
+      }
+
+      .filter-chip.is-active {
+        border-color: var(--cqn-accent);
+        background: var(--cqn-accent);
+        color: #ffffff;
+        box-shadow: 0 5px 13px rgba(16, 163, 127, 0.2);
+      }
+
+      .filter-count {
+        flex: 0 0 auto;
+        opacity: 0.72;
+        font-variant-numeric: tabular-nums;
+      }
+
+      @container (min-width: 340px) {
+        .filter-chip {
+          gap: 5px;
+          font-size: 10px;
+          padding: 0 7px;
+        }
+      }
+
+      .utility-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .language-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--cqn-muted);
+      }
+
+      .language-select {
+        max-width: 112px;
+        min-height: 26px;
+        border: 1px solid var(--cqn-border);
+        border-radius: 7px;
+        outline: none;
+        background: var(--cqn-panel);
+        color: var(--cqn-text);
+        cursor: pointer;
+        font: inherit;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 0 5px;
+      }
+
+      .language-select:focus-visible {
+        border-color: var(--cqn-accent);
+        box-shadow: 0 0 0 2px var(--cqn-accent-soft);
       }
 
       .refresh-button {
@@ -381,45 +789,117 @@
         display: grid;
         align-content: start;
         grid-auto-rows: max-content;
-        gap: 6px;
+        gap: 10px;
         min-height: 0;
         overflow: auto;
-        padding: 0 2px 14px 0;
+        padding: 0 3px 16px 0;
         scrollbar-width: thin;
       }
 
-      .item {
+      .group {
+        display: grid;
+        gap: 6px;
+      }
+
+      .group-header {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 22px;
+        color: var(--cqn-muted);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        padding: 0 4px;
+        text-transform: uppercase;
+      }
+
+      .group-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--category-color, var(--cqn-other));
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--category-color, var(--cqn-other)) 15%, transparent);
+      }
+
+      .group-count {
+        margin-left: auto;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .group-items {
+        display: grid;
+        gap: 6px;
+      }
+
+      .item-card {
         position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 6px;
+        width: 100%;
+        height: auto;
+        min-height: 56px;
+        min-width: 0;
+        align-items: start;
+        border: 1px solid var(--cqn-border);
+        border-left: 3px solid var(--category-color, var(--cqn-other));
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--cqn-panel) 96%, var(--category-color, var(--cqn-other)) 4%);
+        color: var(--cqn-text);
+        margin: 0;
+        overflow: visible;
+        padding: 7px;
+        transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+      }
+
+      .item-card.is-selected {
+        border-color: var(--cqn-accent);
+        box-shadow: 0 0 0 2px var(--cqn-accent-soft);
+      }
+
+      .selection-checkbox {
+        position: absolute;
+        top: 10px;
+        left: 9px;
+        width: 16px;
+        height: 16px;
+        accent-color: var(--cqn-accent);
+      }
+
+      .item-card.is-batch .item-main {
+        padding-left: 24px;
+      }
+
+      .item-card:hover {
+        z-index: 4;
+        border-color: color-mix(in srgb, var(--category-color, var(--cqn-other)) 38%, var(--cqn-border));
+        background: color-mix(in srgb, var(--cqn-panel) 91%, var(--category-color, var(--cqn-other)) 9%);
+        transform: translateY(-1px);
+      }
+
+      .item-card:focus-within,
+      .item-card:has(.label-menu[open]) {
+        z-index: 12;
+      }
+
+      .item-main {
         display: grid;
         grid-template-columns: 30px minmax(0, 1fr);
         gap: 8px;
-        width: 100%;
-        height: auto;
-        min-height: 42px;
         min-width: 0;
-        align-items: start;
-        border: 1px solid transparent;
-        border-radius: 7px;
+        border: 0;
         background: transparent;
         color: var(--cqn-text);
         cursor: pointer;
         font: inherit;
-        line-height: 1;
-        margin: 0;
-        overflow: visible;
-        padding: 8px;
+        padding: 1px;
         text-align: left;
       }
 
-      .item:has(.quote) {
-        padding-top: 9px;
-        padding-bottom: 10px;
-      }
-
-      .item:hover,
-      .item:focus-visible {
-        border-color: rgba(16, 163, 127, 0.36);
-        background: var(--cqn-accent-soft);
+      .item-main:focus-visible {
+        border-radius: 7px;
+        box-shadow: 0 0 0 3px var(--cqn-accent-soft);
         outline: none;
       }
 
@@ -462,10 +942,158 @@
         overflow: hidden;
       }
 
+      .item-actions {
+        display: grid;
+        justify-items: end;
+        gap: 5px;
+      }
+
+      .label-menu {
+        position: relative;
+        z-index: 3;
+      }
+
+      .label-menu[open] {
+        z-index: 8;
+      }
+
+      .label-menu summary {
+        display: grid;
+        width: 28px;
+        height: 24px;
+        place-items: center;
+        border: 1px solid var(--cqn-border);
+        border-radius: 7px;
+        background: var(--cqn-panel);
+        color: var(--cqn-muted);
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 900;
+        list-style: none;
+      }
+
+      .label-menu summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .label-menu-panel {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        display: grid;
+        width: 176px;
+        max-height: 190px;
+        gap: 3px;
+        overflow: auto;
+        border: 1px solid var(--cqn-border);
+        border-radius: 9px;
+        background: var(--cqn-panel);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+        padding: 7px;
+      }
+
+      .label-menu-option {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 6px;
+        border-radius: 6px;
+        color: var(--cqn-text);
+        cursor: pointer;
+        font-size: 10px;
+        padding: 5px;
+      }
+
+      .label-menu-option:hover {
+        background: var(--cqn-accent-soft);
+      }
+
+      .label-menu-option span:last-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .label-pills {
+        display: flex;
+        min-width: 0;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .label-pills:empty {
+        display: none;
+      }
+
+      .label-pill {
+        display: inline-flex;
+        max-width: 104px;
+        align-items: center;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--label-color) 13%, transparent);
+        color: var(--label-color);
+        font-size: 8px;
+        font-weight: 900;
+        line-height: 1;
+        padding: 4px 6px;
+      }
+
+      .label-pill span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .favorite-button {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: #94a3b8;
+        cursor: pointer;
+        font: inherit;
+        font-size: 17px;
+        line-height: 1;
+      }
+
+      .favorite-button:hover,
+      .favorite-button:focus-visible {
+        border-color: rgba(217, 119, 6, 0.28);
+        background: rgba(245, 158, 11, 0.11);
+        color: #d97706;
+        outline: none;
+      }
+
+      .favorite-button.is-favorite {
+        color: #d97706;
+      }
+
+      .category-select {
+        width: 74px;
+        min-height: 24px;
+        border: 1px solid color-mix(in srgb, var(--category-color, var(--cqn-other)) 30%, var(--cqn-border));
+        border-radius: 7px;
+        outline: none;
+        background: color-mix(in srgb, var(--cqn-panel) 92%, var(--category-color, var(--cqn-other)) 8%);
+        color: var(--cqn-text);
+        cursor: pointer;
+        font: inherit;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 0 3px;
+      }
+
+      .category-select:focus-visible {
+        border-color: var(--category-color, var(--cqn-accent));
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--category-color, var(--cqn-accent)) 15%, transparent);
+      }
+
       .quote {
-        display: -webkit-box;
+        display: block;
         width: 100%;
-        max-height: 42px;
         overflow: hidden;
         border-left: 3px solid var(--cqn-accent);
         border-radius: 5px;
@@ -475,9 +1103,16 @@
         font-weight: 700;
         line-height: 1.45;
         padding: 5px 7px;
+      }
+
+      .quote-content {
+        display: -webkit-box;
+        width: 100%;
+        overflow: hidden;
         white-space: normal;
         overflow-wrap: anywhere;
         -webkit-box-orient: vertical;
+        line-clamp: 2;
         -webkit-line-clamp: 2;
         word-break: break-word;
       }
@@ -492,7 +1127,7 @@
         min-height: 120px;
         place-items: center;
         border: 1px dashed var(--cqn-border);
-        border-radius: 7px;
+        border-radius: 10px;
         color: var(--cqn-muted);
         font-size: 12px;
         line-height: 1.5;
@@ -562,6 +1197,16 @@
           background: #242424;
         }
 
+        .search-shell,
+        .filter-chip,
+        .compact-button,
+        .label-input,
+        .batch-label-select,
+        .language-select,
+        .category-select {
+          background: #242424;
+        }
+
         .index {
           background: #34383f;
           color: #d6dae2;
@@ -585,35 +1230,118 @@
       }
     </style>
 
-    <aside class="navigator" aria-label="ChatGPT 问题导航">
+    <aside class="navigator" aria-label="${i18n.t("navigatorLabel")}">
       <header class="header">
-        <div class="mark" aria-hidden="true">问</div>
+        <div class="mark" aria-hidden="true">${i18n.getLocale() === "zh-CN" ? "问" : "Q"}</div>
         <span class="collapsed-count" aria-hidden="true">0</span>
         <div class="title">
-          <p class="name">问题导航</p>
-          <p class="count">正在扫描当前对话...</p>
+          <p class="name">${i18n.t("navigatorName")}</p>
+          <p class="count">${i18n.t("scanning")}</p>
         </div>
-        <span class="drag-grip" title="拖动导航栏" aria-hidden="true"></span>
-        <button class="icon-button refresh-button" type="button" title="刷新列表" aria-label="刷新列表">↻</button>
-        <button class="icon-button toggle-button" type="button" title="折叠导航" aria-label="折叠导航">›</button>
+        <span class="drag-grip" title="${i18n.t("drag")}" aria-hidden="true"></span>
+        <button class="icon-button refresh-button" type="button" title="${i18n.t("refresh")}" aria-label="${i18n.t("refresh")}">↻</button>
+        <button class="icon-button toggle-button" type="button" title="${i18n.t("collapse")}" aria-label="${i18n.t("collapse")}">›</button>
       </header>
       <section class="body">
         <div class="tools">
-          <p class="hint">点击问题跳转到原位置</p>
+          <div class="search-shell">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input class="search-input" type="text" role="searchbox" autocomplete="off" aria-label="${i18n.t("searchPlaceholder")}" placeholder="${i18n.t("searchPlaceholder")}">
+            <button class="clear-search" type="button" title="${i18n.t("clearSearch")}" aria-label="${i18n.t("clearSearch")}" hidden>×</button>
+          </div>
+          <div class="organize-row">
+            <label class="auto-control" title="${i18n.t("toggleAutoClassification")}">
+              <input class="auto-toggle" type="checkbox" aria-label="${i18n.t("toggleAutoClassification")}">
+              <span class="switch-track" aria-hidden="true"></span>
+              <span class="auto-label">${i18n.t("autoClassification")}</span>
+            </label>
+            <div class="organize-actions">
+              <button class="compact-button batch-toggle" type="button">${i18n.t("batchMode")}</button>
+              <button class="compact-button manager-toggle" type="button">${i18n.t("manageLabels")}</button>
+            </div>
+          </div>
+          <section class="label-manager" aria-label="${i18n.t("labelManagerTitle")}" hidden>
+            <div class="manager-heading">
+              <div>
+                <p class="manager-title">${i18n.t("labelManagerTitle")}</p>
+                <p class="manager-hint">${i18n.t("labelManagerHint")}</p>
+              </div>
+              <button class="icon-button manager-close" type="button" aria-label="${i18n.t("closeLabelManager")}">×</button>
+            </div>
+            <div class="label-create-row">
+              <input class="label-input label-create-input" maxlength="20" placeholder="${i18n.t("labelNamePlaceholder")}">
+              <button class="compact-button label-create-button" type="button">${i18n.t("createLabel")}</button>
+            </div>
+            <p class="manager-message" aria-live="polite"></p>
+            <div class="manager-labels"></div>
+          </section>
+          <section class="batch-toolbar" aria-label="${i18n.t("batchMode")}" hidden>
+            <div class="batch-summary">
+              <span class="selected-count">${i18n.t("selectedCount", { count: 0 })}</span>
+              <button class="compact-button select-visible" type="button">${i18n.t("selectVisible")}</button>
+            </div>
+            <div class="batch-actions">
+              <select class="batch-label-select" aria-label="${i18n.t("batchLabelPlaceholder")}"></select>
+              <button class="compact-button batch-add" type="button">${i18n.t("batchAdd")}</button>
+              <button class="compact-button batch-remove" type="button">${i18n.t("batchRemove")}</button>
+              <button class="compact-button batch-cancel" type="button">${i18n.t("batchCancel")}</button>
+            </div>
+          </section>
+          <div class="filter-row" role="toolbar" aria-label="${i18n.t("navigatorName")}"></div>
+          <div class="label-filter-row" role="toolbar" aria-label="${i18n.t("labelFilterAria")}"></div>
+          <div class="utility-row">
+            <p class="hint">${i18n.t("clickToJump")}</p>
+            <label class="language-control">
+              <span aria-hidden="true">文/A</span>
+              <select class="language-select" aria-label="${i18n.t("languageLabel")}">
+                <option value="auto">${i18n.t("languageAuto")}</option>
+                <option value="zh-CN">${i18n.t("languageChinese")}</option>
+                <option value="en">${i18n.t("languageEnglish")}</option>
+              </select>
+            </label>
+          </div>
         </div>
         <div class="list" role="list"></div>
       </section>
-      <div class="resize-handle" title="拖动缩放导航栏" aria-hidden="true"></div>
+      <div class="resize-handle" title="${i18n.t("resize")}" aria-hidden="true"></div>
     </aside>
   `;
 
   const navigatorElement = shadow.querySelector(".navigator");
   const headerElement = shadow.querySelector(".header");
+  const markElement = shadow.querySelector(".mark");
+  const nameElement = shadow.querySelector(".name");
   const countElement = shadow.querySelector(".count");
   const collapsedCountElement = shadow.querySelector(".collapsed-count");
+  const hintElement = shadow.querySelector(".hint");
+  const searchInput = shadow.querySelector(".search-input");
+  const clearSearchButton = shadow.querySelector(".clear-search");
+  const filterRow = shadow.querySelector(".filter-row");
+  const labelFilterRow = shadow.querySelector(".label-filter-row");
+  const autoToggle = shadow.querySelector(".auto-toggle");
+  const autoLabel = shadow.querySelector(".auto-label");
+  const batchToggle = shadow.querySelector(".batch-toggle");
+  const managerToggle = shadow.querySelector(".manager-toggle");
+  const labelManager = shadow.querySelector(".label-manager");
+  const managerClose = shadow.querySelector(".manager-close");
+  const managerTitle = shadow.querySelector(".manager-title");
+  const managerHint = shadow.querySelector(".manager-hint");
+  const labelCreateInput = shadow.querySelector(".label-create-input");
+  const labelCreateButton = shadow.querySelector(".label-create-button");
+  const managerMessage = shadow.querySelector(".manager-message");
+  const managerLabels = shadow.querySelector(".manager-labels");
+  const batchToolbar = shadow.querySelector(".batch-toolbar");
+  const selectedCountElement = shadow.querySelector(".selected-count");
+  const selectVisibleButton = shadow.querySelector(".select-visible");
+  const batchLabelSelect = shadow.querySelector(".batch-label-select");
+  const batchAddButton = shadow.querySelector(".batch-add");
+  const batchRemoveButton = shadow.querySelector(".batch-remove");
+  const batchCancelButton = shadow.querySelector(".batch-cancel");
+  const languageSelect = shadow.querySelector(".language-select");
   const listElement = shadow.querySelector(".list");
   const toggleButton = shadow.querySelector(".toggle-button");
   const refreshButton = shadow.querySelector(".refresh-button");
+  const dragGrip = shadow.querySelector(".drag-grip");
   const resizeHandle = shadow.querySelector(".resize-handle");
 
   function clamp(value, min, max) {
@@ -705,6 +1433,240 @@
     if (shouldSave) {
       saveLayout();
     }
+  }
+
+  function createEmptyOrganizerState() {
+    return {
+      version: ORGANIZER_STORAGE_VERSION,
+      items: {}
+    };
+  }
+
+  function getConversationId() {
+    const segments = location.pathname.split("/").filter(Boolean);
+    const conversationMarker = segments.lastIndexOf("c");
+    const candidate = conversationMarker >= 0 ? segments[conversationMarker + 1] : "";
+    return candidate && /^[a-zA-Z0-9_-]{8,}$/.test(candidate) ? candidate : "";
+  }
+
+  function getConversationStorageKey() {
+    const conversationId = getConversationId();
+    return conversationId ? `${ORGANIZER_STORAGE_PREFIX}:${conversationId}` : "";
+  }
+
+  function sanitizeOrganizerState(value) {
+    if (!value || typeof value !== "object" || !value.items || typeof value.items !== "object") {
+      return createEmptyOrganizerState();
+    }
+
+    const items = {};
+    Object.entries(value.items).forEach(([key, item]) => {
+      if (!organizer.isPersistableStateKey(key) || !item || typeof item !== "object") {
+        return;
+      }
+
+      const favorite = item.favorite === true;
+      const categoryOverride = organizer.isCategory(item.categoryOverride)
+        ? item.categoryOverride
+        : "";
+      const labelIds = Array.isArray(item.labelIds)
+        ? Array.from(
+            new Set(item.labelIds.map(settings.normalizeLabelId).filter(Boolean))
+          ).slice(0, settings.MAX_LABELS)
+        : [];
+      if (favorite || categoryOverride || labelIds.length) {
+        items[key] = { favorite, categoryOverride, labelIds };
+      }
+    });
+
+    return {
+      version: ORGANIZER_STORAGE_VERSION,
+      items
+    };
+  }
+
+  async function loadOrganizerState(storageKey = conversationStorageKey) {
+    if (!storageKey) {
+      return organizerState;
+    }
+
+    try {
+      const conversationId = getConversationId();
+      const legacyKey = conversationId
+        ? `${LEGACY_ORGANIZER_STORAGE_PREFIX}:${conversationId}`
+        : "";
+      const keys = legacyKey ? [storageKey, legacyKey] : [storageKey];
+      const result = await chrome.storage.local.get(keys);
+      if (storageKey === conversationStorageKey) {
+        const storedState = result?.[storageKey];
+        const legacyState = result?.[legacyKey];
+        organizerState = sanitizeOrganizerState(storedState || legacyState);
+        if (!storedState && legacyState) {
+          await saveOrganizerStateNow(storageKey, organizerState);
+        }
+      }
+    } catch (error) {
+      console.warn("[ChatGPT Question Navigator] Organizer state could not be loaded.", error);
+      if (storageKey === conversationStorageKey) {
+        organizerState = createEmptyOrganizerState();
+      }
+    }
+
+    return organizerState;
+  }
+
+  async function saveOrganizerStateNow(
+    storageKey = conversationStorageKey,
+    state = organizerState
+  ) {
+    if (!storageKey) {
+      return;
+    }
+
+    try {
+      await chrome.storage.local.set({
+        [storageKey]: sanitizeOrganizerState(state)
+      });
+    } catch (error) {
+      console.warn("[ChatGPT Question Navigator] Organizer state could not be saved.", error);
+    }
+  }
+
+  function scheduleOrganizerStateSave() {
+    if (!conversationStorageKey) {
+      return;
+    }
+
+    void saveOrganizerStateNow(conversationStorageKey, organizerState);
+  }
+
+  function getEntryStateKeys(entry) {
+    if (!entry) {
+      return [];
+    }
+
+    return [
+      entry.key,
+      entry.turnId ? `turn:${entry.turnId}` : "",
+      entry.messageId ? `message:${entry.messageId}` : "",
+      entry.testId ? `test:${entry.testId}` : ""
+    ].filter((value, index, values) => value && values.indexOf(value) === index);
+  }
+
+  function getEntryOrganizerRecord(entry) {
+    const matchingKey = getEntryStateKeys(entry).find((key) => organizerState.items[key]);
+    return matchingKey ? organizerState.items[matchingKey] : null;
+  }
+
+  function updateEntryOrganizerRecord(entry, patch) {
+    const keys = getEntryStateKeys(entry);
+    const canonicalKey = keys[0];
+    if (!canonicalKey) {
+      return;
+    }
+
+    const current = getEntryOrganizerRecord(entry) || {};
+    const next = {
+      favorite:
+        patch.favorite === undefined ? current.favorite === true : patch.favorite === true,
+      categoryOverride:
+        patch.categoryOverride === undefined
+          ? organizer.isCategory(current.categoryOverride)
+            ? current.categoryOverride
+            : ""
+          : organizer.isCategory(patch.categoryOverride)
+            ? patch.categoryOverride
+            : "",
+      labelIds:
+        patch.labelIds === undefined
+          ? Array.isArray(current.labelIds)
+            ? current.labelIds
+            : []
+          : Array.from(
+              new Set(
+                (Array.isArray(patch.labelIds) ? patch.labelIds : [])
+                  .map(settings.normalizeLabelId)
+                  .filter(Boolean)
+              )
+            ).slice(0, settings.MAX_LABELS)
+    };
+
+    keys.forEach((key) => delete organizerState.items[key]);
+    if (next.favorite || next.categoryOverride || next.labelIds.length) {
+      organizerState.items[canonicalKey] = next;
+    }
+    scheduleOrganizerStateSave();
+  }
+
+  function applyOrganizerMetadata(entry) {
+    const record = getEntryOrganizerRecord(entry) || {};
+    const autoCategory = autoClassificationEnabled
+      ? organizer.classifyQuestion({
+          text: entry.displayText || entry.text || "",
+          hasCodeBlock: entry.hasCodeBlock === true
+        })
+      : organizer.isCategory(entry.autoCategory)
+        ? entry.autoCategory
+        : "other";
+    const categoryOverride = organizer.isCategory(record.categoryOverride)
+      ? record.categoryOverride
+      : "";
+
+    return {
+      ...entry,
+      autoCategory,
+      categoryOverride,
+      category: categoryOverride || autoCategory,
+      favorite: record.favorite === true,
+      labelIds: Array.isArray(record.labelIds)
+        ? record.labelIds.filter((id) => customLabels.some((label) => label.id === id))
+        : []
+    };
+  }
+
+  async function switchConversationState(nextStorageKey) {
+    if (nextStorageKey === conversationStorageKey) {
+      return;
+    }
+
+    const sessionItems = !conversationStorageKey ? { ...organizerState.items } : null;
+    conversationStorageKey = nextStorageKey;
+    organizerState = createEmptyOrganizerState();
+    await loadOrganizerState(nextStorageKey);
+
+    if (sessionItems && nextStorageKey) {
+      organizerState.items = {
+        ...sessionItems,
+        ...organizerState.items
+      };
+      scheduleOrganizerStateSave();
+    }
+
+    entries = entries.map(applyOrganizerMetadata);
+    selectedEntryKeys.clear();
+    batchMode = false;
+    render();
+  }
+
+  function getFavoriteCount() {
+    return entries.filter((entry) => entry.favorite).length;
+  }
+
+  function getCategoryCounts() {
+    return organizer.CATEGORY_ORDER.reduce((counts, category) => {
+      counts[category] = entries.filter((entry) => entry.category === category).length;
+      return counts;
+    }, {});
+  }
+
+  function getCurrentLabelCounts() {
+    return customLabels.reduce((counts, label) => {
+      const count = entries.filter((entry) => entry.labelIds?.includes(label.id)).length;
+      if (count > 0) {
+        counts[label.id] = count;
+      }
+      return counts;
+    }, {});
   }
 
   function ensureHighlightStyle() {
@@ -1080,7 +2042,7 @@
   }
 
   function getUnloadedPlaceholder(index) {
-    return `问题 ${index + 1}（内容未加载）`;
+    return i18n.t("unloadedQuestion", { index: index + 1 });
   }
 
   function extractMessageText(messageRoot, index = 0) {
@@ -1237,6 +2199,35 @@
     );
   }
 
+  function parseConversationTurnOrder(...values) {
+    for (const value of values) {
+      const match = String(value || "").match(/conversation-turn-(\d+)/i);
+      if (match) {
+        return Number(match[1]);
+      }
+    }
+
+    return null;
+  }
+
+  function getContainerConversationTurnOrder(container) {
+    const turnContainer = container.matches?.("[data-testid*='conversation-turn-' i]")
+      ? container
+      : container.closest?.("[data-testid*='conversation-turn-' i]");
+    return parseConversationTurnOrder(
+      container.getAttribute("data-testid"),
+      turnContainer?.getAttribute("data-testid")
+    );
+  }
+
+  function getEntryConversationTurnOrder(entry) {
+    if (Number.isInteger(entry?.turnOrder)) {
+      return entry.turnOrder;
+    }
+
+    return parseConversationTurnOrder(entry?.testId, entry?.key);
+  }
+
   function warnEmptyMessage(container, key, index) {
     if (warnedEmptyMessageKeys.has(key)) {
       return;
@@ -1270,6 +2261,7 @@
             turnId: getTurnId(container),
             messageId: getMessageId(container),
             testId: container.getAttribute("data-testid") || "",
+            turnOrder: getContainerConversationTurnOrder(container),
             fullText: parts.fullText,
             displayText: parts.displayText,
             titleText,
@@ -1278,6 +2270,7 @@
             quoteLabel: parts.quoteLabel,
             label: parts.displayText,
             searchText: parts.searchText,
+            hasCodeBlock: Boolean(container.querySelector("pre, code")),
             isPlaceholder: parts.isPlaceholder
           };
         } catch (error) {
@@ -1320,42 +2313,238 @@
   }
 
   function updateCounts() {
-    countElement.textContent =
-      entries.length > 0 ? `${entries.length} 个问题` : "当前对话还没有检测到你的问题";
+    const favorites = getFavoriteCount();
+    countElement.textContent = entries.length
+      ? i18n.t("questionFavoriteCount", { count: entries.length, favorites })
+      : i18n.t("noQuestionsCount");
     collapsedCountElement.textContent =
       entries.length > 99 ? "99+" : String(entries.length);
-    collapsedCountElement.title = `${entries.length} 个问题`;
+    collapsedCountElement.title = i18n.t("questionCount", { count: entries.length });
   }
 
-  function ensureEmptyState() {
-    if (entries.length > 0) {
-      listElement.querySelector(".empty")?.remove();
-      return;
-    }
-
-    if (listElement.querySelector(".empty")) {
-      return;
-    }
-
+  function createEmptyState(message) {
     const empty = document.createElement("div");
     empty.className = "empty";
-    empty.textContent = "打开一个 ChatGPT 对话后，这里会列出你发出的每个问题。";
-    listElement.appendChild(empty);
+    empty.textContent = message;
+    return empty;
   }
 
-  function fillEntryButton(button, entry, index) {
-    button.title = entry.titleText || entry.fullText || entry.text || entry.displayText || "";
-    button.dataset.index = String(index);
-    button.setAttribute("role", "listitem");
-    button.replaceChildren();
+  function getCategoryColor(category) {
+    const variables = {
+      code: "var(--cqn-code)",
+      solution: "var(--cqn-solution)",
+      research: "var(--cqn-research)",
+      todo: "var(--cqn-todo)",
+      other: "var(--cqn-other)"
+    };
+    return variables[category] || variables.other;
+  }
+
+  function getCategoryLabel(category) {
+    return i18n.t(organizer.CATEGORY_LABEL_KEYS[category] || "categoryOther");
+  }
+
+  function getLabelById(labelId) {
+    return customLabels.find((label) => label.id === labelId) || null;
+  }
+
+  function getActiveLabelId() {
+    return currentFilter.startsWith("label:") ? currentFilter.slice(6) : "";
+  }
+
+  function renderFilters() {
+    const categoryCounts = getCategoryCounts();
+    const filters = [
+      { id: "all", label: i18n.t("filterAll"), count: entries.length },
+      { id: "favorites", label: i18n.t("filterFavorites"), count: getFavoriteCount() },
+      ...(autoClassificationEnabled
+        ? organizer.CATEGORY_ORDER.map((category) => ({
+            id: category,
+            label: getCategoryLabel(category),
+            count: categoryCounts[category]
+          }))
+        : [])
+    ];
+    const fragment = document.createDocumentFragment();
+
+    filters.forEach((filter) => {
+      const button = document.createElement("button");
+      button.className = "filter-chip";
+      button.classList.toggle("is-active", currentFilter === filter.id);
+      button.type = "button";
+      button.dataset.filter = filter.id;
+      button.setAttribute("aria-pressed", String(currentFilter === filter.id));
+
+      const label = document.createElement("span");
+      label.className = "filter-label";
+      label.textContent = filter.label;
+      const count = document.createElement("span");
+      count.className = "filter-count";
+      count.textContent = String(filter.count);
+      button.append(label, count);
+      fragment.appendChild(button);
+    });
+
+    filterRow.replaceChildren(fragment);
+
+    const labelCounts = getCurrentLabelCounts();
+    const usedLabels = customLabels.filter((label) => labelCounts[label.id] > 0);
+    const visibleLabels = labelsExpanded ? usedLabels : usedLabels.slice(0, 4);
+    const labelFragment = document.createDocumentFragment();
+    visibleLabels.forEach((labelDefinition) => {
+      const filterId = `label:${labelDefinition.id}`;
+      const button = document.createElement("button");
+      button.className = "label-filter-chip";
+      button.classList.toggle("is-active", currentFilter === filterId);
+      button.type = "button";
+      button.dataset.filter = filterId;
+      button.style.setProperty("--label-color", labelDefinition.color);
+      button.setAttribute("aria-pressed", String(currentFilter === filterId));
+
+      const name = document.createElement("span");
+      name.className = "label-filter-name";
+      name.textContent = labelDefinition.name;
+      const count = document.createElement("span");
+      count.className = "filter-count";
+      count.textContent = String(labelCounts[labelDefinition.id]);
+      button.append(name, count);
+      labelFragment.appendChild(button);
+    });
+
+    if (usedLabels.length > 4) {
+      const expandButton = document.createElement("button");
+      expandButton.className = "label-filter-chip";
+      expandButton.type = "button";
+      expandButton.dataset.action = "expand-labels";
+      expandButton.style.setProperty("--label-color", "var(--cqn-accent)");
+      expandButton.textContent = labelsExpanded
+        ? i18n.t("collapseLabels")
+        : i18n.t("labelCountMore", { count: usedLabels.length - 4 });
+      expandButton.title = i18n.t(labelsExpanded ? "collapseLabels" : "expandLabels");
+      labelFragment.appendChild(expandButton);
+    }
+    labelFilterRow.replaceChildren(labelFragment);
+  }
+
+  function getVisibleEntries() {
+    const activeLabelId = getActiveLabelId();
+    return entries.filter((entry) => {
+      const filterMatches =
+        currentFilter === "all" ||
+        (currentFilter === "favorites" && entry.favorite) ||
+        (activeLabelId && entry.labelIds?.includes(activeLabelId)) ||
+        (autoClassificationEnabled && entry.category === currentFilter);
+      return filterMatches && organizer.matchesSearch(entry, searchQuery);
+    });
+  }
+
+  function renderLabelPills(entry, body) {
+    const assignedLabels = (entry.labelIds || []).map(getLabelById).filter(Boolean);
+    if (!assignedLabels.length) {
+      return;
+    }
+
+    const pills = document.createElement("span");
+    pills.className = "label-pills";
+    assignedLabels.slice(0, 2).forEach((labelDefinition) => {
+      const pill = document.createElement("span");
+      pill.className = "label-pill";
+      pill.style.setProperty("--label-color", labelDefinition.color);
+      pill.title = labelDefinition.name;
+      const name = document.createElement("span");
+      name.textContent = labelDefinition.name;
+      pill.appendChild(name);
+      pills.appendChild(pill);
+    });
+    if (assignedLabels.length > 2) {
+      const more = document.createElement("span");
+      more.className = "label-pill";
+      more.style.setProperty("--label-color", "var(--cqn-muted)");
+      more.textContent = i18n.t("labelCountMore", { count: assignedLabels.length - 2 });
+      more.title = assignedLabels.slice(2).map((label) => label.name).join(", ");
+      pills.appendChild(more);
+    }
+    body.appendChild(pills);
+  }
+
+  function createQuestionLabelMenu(entry) {
+    const details = document.createElement("details");
+    details.className = "label-menu";
+    const summary = document.createElement("summary");
+    summary.title = i18n.t("editQuestionLabels");
+    summary.setAttribute("aria-label", summary.title);
+    summary.textContent = entry.labelIds?.length ? `#${entry.labelIds.length}` : "#";
+    details.appendChild(summary);
+
+    const panel = document.createElement("div");
+    panel.className = "label-menu-panel";
+    panel.setAttribute("aria-label", i18n.t("questionLabels"));
+    if (!customLabels.length) {
+      const empty = document.createElement("span");
+      empty.className = "manager-hint";
+      empty.textContent = i18n.t("noCustomLabels");
+      panel.appendChild(empty);
+    } else {
+      customLabels.forEach((labelDefinition) => {
+        const option = document.createElement("label");
+        option.className = "label-menu-option";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = entry.labelIds?.includes(labelDefinition.id) || false;
+        checkbox.dataset.action = "question-label";
+        checkbox.dataset.index = String(entry.index);
+        checkbox.dataset.labelId = labelDefinition.id;
+        const dot = document.createElement("span");
+        dot.className = "label-color-dot";
+        dot.style.setProperty("--label-color", labelDefinition.color);
+        const name = document.createElement("span");
+        name.textContent = labelDefinition.name;
+        option.append(checkbox, dot, name);
+        panel.appendChild(option);
+      });
+    }
+    details.appendChild(panel);
+    return details;
+  }
+
+  function createEntryCard(entry) {
+    const card = document.createElement("article");
+    card.className = "item-card";
+    card.setAttribute("role", "listitem");
+    card.style.setProperty(
+      "--category-color",
+      getCategoryColor(autoClassificationEnabled ? entry.category : "other")
+    );
+    card.classList.toggle("is-batch", batchMode);
+    card.classList.toggle("is-selected", selectedEntryKeys.has(entry.key));
+
+    if (batchMode) {
+      const checkbox = document.createElement("input");
+      checkbox.className = "selection-checkbox";
+      checkbox.type = "checkbox";
+      checkbox.checked = selectedEntryKeys.has(entry.key);
+      checkbox.dataset.action = "batch-select";
+      checkbox.dataset.index = String(entry.index);
+      checkbox.setAttribute("aria-label", i18n.t("selectQuestion"));
+      card.appendChild(checkbox);
+    }
+
+    const mainButton = document.createElement("button");
+    mainButton.className = "item-main";
+    mainButton.type = "button";
+    mainButton.dataset.index = String(entry.index);
+    mainButton.title = entry.titleText || entry.fullText || entry.text || entry.displayText || "";
 
     const number = document.createElement("span");
     number.className = "index";
-    number.textContent = String(index + 1);
+    number.textContent = String(entry.index + 1);
 
     const text = document.createElement("span");
     text.className = "text";
-    text.textContent = entry.displayText || entry.label;
+    text.textContent =
+      entry.displayText ||
+      entry.label ||
+      i18n.t("unloadedQuestion", { index: entry.index + 1 });
 
     const body = document.createElement("span");
     body.className = "item-body";
@@ -1363,45 +2552,219 @@
     if (entry.quote && !entry.isPlaceholder) {
       const quote = document.createElement("span");
       quote.className = "quote";
+      quote.title = entry.quote;
+
+      const quoteContent = document.createElement("span");
+      quoteContent.className = "quote-content";
 
       const prefix = document.createElement("span");
       prefix.className = "quote-prefix";
-      prefix.textContent = "引用：";
+      prefix.textContent = i18n.t("quotePrefix");
 
-      quote.append(prefix, document.createTextNode(entry.quoteLabel));
+      quoteContent.append(prefix, document.createTextNode(entry.quoteLabel));
+      quote.appendChild(quoteContent);
       body.appendChild(quote);
     }
 
+    renderLabelPills(entry, body);
     body.appendChild(text);
-    button.append(number, body);
+    mainButton.append(number, body);
+
+    const actions = document.createElement("div");
+    actions.className = "item-actions";
+
+    const favoriteButton = document.createElement("button");
+    favoriteButton.className = "favorite-button";
+    favoriteButton.classList.toggle("is-favorite", entry.favorite);
+    favoriteButton.type = "button";
+    favoriteButton.dataset.index = String(entry.index);
+    favoriteButton.dataset.action = "favorite";
+    favoriteButton.textContent = i18n.t(entry.favorite ? "favoriteSymbol" : "unfavoriteSymbol");
+    favoriteButton.title = i18n.t(entry.favorite ? "removeFavorite" : "addFavorite");
+    favoriteButton.setAttribute("aria-label", favoriteButton.title);
+    favoriteButton.setAttribute("aria-pressed", String(entry.favorite));
+
+    actions.append(favoriteButton, createQuestionLabelMenu(entry));
+    if (autoClassificationEnabled) {
+      const categorySelect = document.createElement("select");
+      categorySelect.className = "category-select";
+      categorySelect.dataset.index = String(entry.index);
+      categorySelect.dataset.action = "category";
+      categorySelect.title = i18n.t("categoryLabel");
+      categorySelect.setAttribute("aria-label", i18n.t("categoryLabel"));
+
+      const automaticOption = document.createElement("option");
+      automaticOption.value = "";
+      automaticOption.textContent = i18n.t("automaticCategory", {
+        category: getCategoryLabel(entry.autoCategory)
+      });
+      categorySelect.appendChild(automaticOption);
+      organizer.CATEGORY_ORDER.forEach((category) => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = getCategoryLabel(category);
+        categorySelect.appendChild(option);
+      });
+      categorySelect.value = entry.categoryOverride || "";
+      actions.appendChild(categorySelect);
+    }
+    card.append(mainButton, actions);
+    return card;
   }
 
-  function createEntryButton(entry, index) {
-    const button = document.createElement("button");
-    button.className = "item";
-    button.type = "button";
-    fillEntryButton(button, entry, index);
-    return button;
+  function createCategoryGroup(category, categoryEntries) {
+    const group = document.createElement("section");
+    group.className = "group";
+    group.style.setProperty("--category-color", getCategoryColor(category));
+
+    const header = document.createElement("div");
+    header.className = "group-header";
+    const dot = document.createElement("span");
+    dot.className = "group-dot";
+    dot.setAttribute("aria-hidden", "true");
+    const label = document.createElement("span");
+    label.textContent = getCategoryLabel(category);
+    const count = document.createElement("span");
+    count.className = "group-count";
+    count.textContent = i18n.t("groupCount", { count: categoryEntries.length });
+    header.append(dot, label, count);
+
+    const items = document.createElement("div");
+    items.className = "group-items";
+    categoryEntries.forEach((entry) => items.appendChild(createEntryCard(entry)));
+    group.append(header, items);
+    return group;
   }
 
-  function buildNavItems(messages) {
-    const fragment = document.createDocumentFragment();
-    messages.forEach((entry, index) => {
-      fragment.appendChild(createEntryButton(entry, index));
-    });
-    return fragment;
+  function getLabelErrorMessage(reason) {
+    const keys = {
+      empty: "labelRequired",
+      tooLong: "labelTooLong",
+      duplicate: "labelDuplicate",
+      limit: "labelLimit",
+      missing: "labelMissing"
+    };
+    return i18n.t(keys[reason] || "labelOperationFailed");
   }
 
-  function render() {
-    updateCounts();
-    listElement.replaceChildren();
+  function setManagerMessage(message = "", isError = false) {
+    managerMessage.textContent = message;
+    managerMessage.classList.toggle("is-error", isError);
+  }
 
-    if (entries.length === 0) {
-      ensureEmptyState();
+  function renderLabelManager() {
+    labelManager.hidden = !labelManagerOpen;
+    managerToggle.classList.toggle("is-active", labelManagerOpen);
+    managerToggle.setAttribute("aria-pressed", String(labelManagerOpen));
+    managerLabels.replaceChildren();
+
+    if (!customLabels.length) {
+      const empty = document.createElement("p");
+      empty.className = "manager-hint";
+      empty.textContent = i18n.t("noCustomLabels");
+      managerLabels.appendChild(empty);
       return;
     }
 
-    listElement.appendChild(buildNavItems(entries));
+    customLabels.forEach((labelDefinition) => {
+      const row = document.createElement("div");
+      row.className = "manager-label-row";
+      row.dataset.labelId = labelDefinition.id;
+      const dot = document.createElement("span");
+      dot.className = "label-color-dot";
+      dot.style.setProperty("--label-color", labelDefinition.color);
+      const input = document.createElement("input");
+      input.className = "label-input manager-label-input";
+      input.value = labelDefinition.name;
+      input.maxLength = settings.MAX_LABEL_NAME_LENGTH;
+      input.setAttribute("aria-label", i18n.t("renameLabel"));
+      const save = document.createElement("button");
+      save.className = "compact-button label-save";
+      save.type = "button";
+      save.textContent = i18n.t("saveLabel");
+      save.title = i18n.t("renameLabel");
+      const remove = document.createElement("button");
+      remove.className = "compact-button label-delete";
+      remove.type = "button";
+      remove.textContent = "×";
+      remove.title = i18n.t("deleteLabel");
+      remove.setAttribute("aria-label", remove.title);
+      row.append(dot, input, save, remove);
+      managerLabels.appendChild(row);
+    });
+  }
+
+  function renderBatchToolbar() {
+    batchToolbar.hidden = !batchMode;
+    batchToggle.classList.toggle("is-active", batchMode);
+    batchToggle.setAttribute("aria-pressed", String(batchMode));
+    selectedCountElement.textContent = i18n.t("selectedCount", {
+      count: selectedEntryKeys.size
+    });
+
+    const previousValue = batchLabelSelect.value;
+    batchLabelSelect.replaceChildren();
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = i18n.t("batchLabelPlaceholder");
+    batchLabelSelect.appendChild(placeholder);
+    customLabels.forEach((labelDefinition) => {
+      const option = document.createElement("option");
+      option.value = labelDefinition.id;
+      option.textContent = labelDefinition.name;
+      batchLabelSelect.appendChild(option);
+    });
+    batchLabelSelect.value = getLabelById(previousValue) ? previousValue : "";
+    const disabled = selectedEntryKeys.size === 0 || !customLabels.length;
+    batchAddButton.disabled = disabled;
+    batchRemoveButton.disabled = disabled;
+  }
+
+  function render() {
+    if (!autoClassificationEnabled && organizer.isCategory(currentFilter)) {
+      currentFilter = "all";
+    }
+    const activeLabelId = getActiveLabelId();
+    if (activeLabelId && !getLabelById(activeLabelId)) {
+      currentFilter = "all";
+    }
+    updateCounts();
+    renderFilters();
+    renderLabelManager();
+    renderBatchToolbar();
+    clearSearchButton.hidden = !searchQuery;
+    listElement.replaceChildren();
+
+    if (entries.length === 0) {
+      listElement.appendChild(createEmptyState(i18n.t("openConversationEmpty")));
+      return;
+    }
+
+    const visibleEntries = getVisibleEntries();
+    if (visibleEntries.length === 0) {
+      const message = searchQuery
+        ? i18n.t("noResults")
+        : currentFilter === "favorites"
+          ? i18n.t("noFavorites")
+          : getActiveLabelId()
+            ? i18n.t("noLabelResults")
+            : i18n.t("noCategoryResults");
+      listElement.appendChild(createEmptyState(message));
+      return;
+    }
+
+    const shouldGroup = autoClassificationEnabled && !getActiveLabelId();
+    if (!shouldGroup) {
+      visibleEntries.forEach((entry) => listElement.appendChild(createEntryCard(entry)));
+      return;
+    }
+
+    organizer.CATEGORY_ORDER.forEach((category) => {
+      const categoryEntries = visibleEntries.filter((entry) => entry.category === category);
+      if (categoryEntries.length) {
+        listElement.appendChild(createCategoryGroup(category, categoryEntries));
+      }
+    });
   }
 
   function computePageSignature(messages) {
@@ -1421,11 +2784,12 @@
   }
 
   function replaceEntries(nextEntries, shouldRender) {
-    entries = nextEntries.map((entry, index) => ({
-      ...entry,
-      index
-    }));
-    entryKeys = new Set(entries.map((entry) => entry.key));
+    entries = nextEntries.map((entry, index) =>
+      applyOrganizerMetadata({
+        ...entry,
+        index
+      })
+    );
 
     if (shouldRender) {
       render();
@@ -1437,51 +2801,132 @@
       return nextEntries;
     }
 
-    const pendingEntries = [...nextEntries];
-    const mergedEntries = [];
+    const previousEntries = [...entries];
+    const unmatchedPreviousEntries = new Set(previousEntries);
+    const placementByPreviousEntry = new Map();
 
-    entries.forEach((currentEntry) => {
-      const nextIndex = pendingEntries.findIndex((nextEntry) => areSameMessageEntry(currentEntry, nextEntry));
-
-      if (nextIndex >= 0) {
-        const nextEntry = pendingEntries.splice(nextIndex, 1)[0];
-        mergedEntries.push(mergeSameMessageEntry(currentEntry, nextEntry));
-        return;
+    // The current DOM scan is authoritative for every connected message. Building
+    // from this list first prevents a newly loaded historical turn from being
+    // appended after the previously known messages.
+    const orderedEntries = nextEntries.map((nextEntry) => {
+      const previousEntry = previousEntries.find(
+        (candidate) =>
+          unmatchedPreviousEntries.has(candidate) && areSameMessageEntry(candidate, nextEntry)
+      );
+      if (!previousEntry) {
+        return nextEntry;
       }
 
-      if (currentEntry.isPlaceholder) {
-        const hydratedEntry = hydratePlaceholderEntry(currentEntry, mergedEntries.length);
-        if (hydratedEntry && !hydratedEntry.isPlaceholder) {
-          const hydratedIndex = pendingEntries.findIndex((nextEntry) =>
-            areSameMessageEntry(hydratedEntry, nextEntry)
-          );
-          if (hydratedIndex >= 0) {
-            pendingEntries.splice(hydratedIndex, 1);
-          }
-
-          mergedEntries.push(hydratedEntry);
-          return;
-        }
-
-        mergedEntries.push({
-          ...currentEntry,
-          isStalePlaceholder: !currentEntry.element?.isConnected
-        });
-        return;
-      }
-
-      const currentElement = currentEntry.element?.isConnected
-        ? currentEntry.element
-        : findCurrentElementForEntry(currentEntry);
-      mergedEntries.push({
-        ...currentEntry,
-        element: currentElement || currentEntry.element,
-        isStalePlaceholder: !currentElement
-      });
+      unmatchedPreviousEntries.delete(previousEntry);
+      const mergedEntry = mergeSameMessageEntry(previousEntry, nextEntry);
+      placementByPreviousEntry.set(previousEntry, mergedEntry);
+      return mergedEntry;
     });
 
-    mergedEntries.push(...pendingEntries);
-    return mergedEntries;
+    const retainedEntries = [];
+    previousEntries.forEach((previousEntry, previousIndex) => {
+      if (!unmatchedPreviousEntries.has(previousEntry)) {
+        return;
+      }
+
+      const retainedEntry = retainDisconnectedEntry(previousEntry, previousIndex);
+      const duplicateIndex = orderedEntries.findIndex((entry) =>
+        areSameMessageEntry(retainedEntry, entry)
+      );
+      if (duplicateIndex >= 0) {
+        const mergedEntry = mergeSameMessageEntry(retainedEntry, orderedEntries[duplicateIndex]);
+        orderedEntries[duplicateIndex] = mergedEntry;
+        placementByPreviousEntry.set(previousEntry, mergedEntry);
+        return;
+      }
+
+      placementByPreviousEntry.set(previousEntry, retainedEntry);
+      retainedEntries.push({ previousEntry, previousIndex, retainedEntry });
+    });
+
+    retainedEntries.forEach(({ previousEntry, previousIndex, retainedEntry }) => {
+      const insertionIndex = findRetainedEntryInsertionIndex(
+        orderedEntries,
+        retainedEntry,
+        previousEntries,
+        previousIndex,
+        placementByPreviousEntry
+      );
+      orderedEntries.splice(insertionIndex, 0, retainedEntry);
+      placementByPreviousEntry.set(previousEntry, retainedEntry);
+    });
+
+    return orderedEntries;
+  }
+
+  function retainDisconnectedEntry(currentEntry, previousIndex) {
+    if (currentEntry.isPlaceholder) {
+      const hydratedEntry = hydratePlaceholderEntry(currentEntry, previousIndex);
+      if (hydratedEntry && !hydratedEntry.isPlaceholder) {
+        return hydratedEntry;
+      }
+
+      return {
+        ...currentEntry,
+        isStalePlaceholder: !currentEntry.element?.isConnected
+      };
+    }
+
+    const currentElement = currentEntry.element?.isConnected
+      ? currentEntry.element
+      : findCurrentElementForEntry(currentEntry);
+    return {
+      ...currentEntry,
+      element: currentElement || currentEntry.element,
+      turnOrder:
+        (currentElement ? getContainerConversationTurnOrder(currentElement) : null) ??
+        getEntryConversationTurnOrder(currentEntry),
+      isStalePlaceholder: !currentElement
+    };
+  }
+
+  function findRetainedEntryInsertionIndex(
+    orderedEntries,
+    retainedEntry,
+    previousEntries,
+    previousIndex,
+    placementByPreviousEntry
+  ) {
+    const explicitOrder = getEntryConversationTurnOrder(retainedEntry);
+    if (explicitOrder !== null) {
+      const firstLaterIndex = orderedEntries.findIndex((entry) => {
+        const order = getEntryConversationTurnOrder(entry);
+        return order !== null && order > explicitOrder;
+      });
+      if (firstLaterIndex >= 0) {
+        return firstLaterIndex;
+      }
+
+      for (let index = orderedEntries.length - 1; index >= 0; index -= 1) {
+        const order = getEntryConversationTurnOrder(orderedEntries[index]);
+        if (order !== null && order < explicitOrder) {
+          return index + 1;
+        }
+      }
+    }
+
+    for (let index = previousIndex - 1; index >= 0; index -= 1) {
+      const previousPlacement = placementByPreviousEntry.get(previousEntries[index]);
+      const placementIndex = orderedEntries.indexOf(previousPlacement);
+      if (placementIndex >= 0) {
+        return placementIndex + 1;
+      }
+    }
+
+    for (let index = previousIndex + 1; index < previousEntries.length; index += 1) {
+      const nextPlacement = placementByPreviousEntry.get(previousEntries[index]);
+      const placementIndex = orderedEntries.indexOf(nextPlacement);
+      if (placementIndex >= 0) {
+        return placementIndex;
+      }
+    }
+
+    return orderedEntries.length;
   }
 
   function mergeSameMessageEntry(currentEntry, nextEntry) {
@@ -1500,6 +2945,8 @@
         turnId: nextEntry.turnId || currentEntry.turnId || "",
         messageId: nextEntry.messageId || currentEntry.messageId || "",
         testId: nextEntry.testId || currentEntry.testId || "",
+        turnOrder:
+          getEntryConversationTurnOrder(nextEntry) ?? getEntryConversationTurnOrder(currentEntry),
         isPlaceholder: false,
         isStalePlaceholder: false
       };
@@ -1543,6 +2990,8 @@
         turnId: getTurnId(element) || entry.turnId || "",
         messageId: getMessageId(element) || entry.messageId || "",
         testId: element.getAttribute("data-testid") || entry.testId || "",
+        turnOrder:
+          getContainerConversationTurnOrder(element) ?? getEntryConversationTurnOrder(entry),
         fullText: parts.fullText,
         displayText: parts.displayText,
         titleText: parts.fullText,
@@ -1551,6 +3000,7 @@
         quoteLabel: parts.quoteLabel,
         label: parts.displayText,
         searchText: parts.searchText,
+        hasCodeBlock: Boolean(element.querySelector("pre, code")),
         isPlaceholder: false,
         isStalePlaceholder: false
       };
@@ -1569,6 +3019,10 @@
       lastUrl = location.href;
       lastSignature = "";
       warnedEmptyMessageKeys = new Set();
+      currentFilter = "all";
+      searchQuery = "";
+      searchInput.value = "";
+      void switchConversationState(getConversationStorageKey());
     }
 
     const scannedEntries = scanUserMessages();
@@ -1601,7 +3055,7 @@
       return;
     }
 
-    refresh(true);
+    refresh(false);
   }
 
   function startPeriodicRefresh() {
@@ -1678,11 +3132,61 @@
     }, 1600);
   }
 
+  function applyTranslations() {
+    navigatorElement.setAttribute("aria-label", i18n.t("navigatorLabel"));
+    markElement.textContent = i18n.getLocale() === "zh-CN" ? "问" : "Q";
+    nameElement.textContent = i18n.t("navigatorName");
+    hintElement.textContent = i18n.t("clickToJump");
+    searchInput.placeholder = i18n.t("searchPlaceholder");
+    searchInput.setAttribute("aria-label", i18n.t("searchPlaceholder"));
+    clearSearchButton.title = i18n.t("clearSearch");
+    clearSearchButton.setAttribute("aria-label", clearSearchButton.title);
+    filterRow.setAttribute("aria-label", i18n.t("navigatorName"));
+    labelFilterRow.setAttribute("aria-label", i18n.t("labelFilterAria"));
+    autoToggle.setAttribute("aria-label", i18n.t("toggleAutoClassification"));
+    autoToggle.parentElement.title = i18n.t("toggleAutoClassification");
+    autoLabel.textContent = i18n.t("autoClassification");
+    batchToggle.textContent = i18n.t(batchMode ? "exitBatchMode" : "batchMode");
+    managerToggle.textContent = i18n.t("manageLabels");
+    managerTitle.textContent = i18n.t("labelManagerTitle");
+    managerHint.textContent = i18n.t("labelManagerHint");
+    labelManager.setAttribute("aria-label", i18n.t("labelManagerTitle"));
+    managerClose.setAttribute("aria-label", i18n.t("closeLabelManager"));
+    labelCreateInput.placeholder = i18n.t("labelNamePlaceholder");
+    labelCreateButton.textContent = i18n.t("createLabel");
+    batchToolbar.setAttribute("aria-label", i18n.t("batchMode"));
+    selectVisibleButton.textContent = i18n.t("selectVisible");
+    batchAddButton.textContent = i18n.t("batchAdd");
+    batchRemoveButton.textContent = i18n.t("batchRemove");
+    batchCancelButton.textContent = i18n.t("batchCancel");
+    dragGrip.title = i18n.t("drag");
+    refreshButton.title = i18n.t("refresh");
+    refreshButton.setAttribute("aria-label", refreshButton.title);
+    resizeHandle.title = i18n.t("resize");
+    languageSelect.setAttribute("aria-label", i18n.t("languageLabel"));
+
+    const optionLabels = {
+      auto: i18n.t("languageAuto"),
+      "zh-CN": i18n.t("languageChinese"),
+      en: i18n.t("languageEnglish")
+    };
+    Array.from(languageSelect.options).forEach((option) => {
+      option.textContent = optionLabels[option.value] || option.value;
+    });
+    languageSelect.value = i18n.getPreference();
+    autoToggle.checked = autoClassificationEnabled;
+    autoToggle.title = i18n.t(
+      autoClassificationEnabled ? "autoClassificationHintOn" : "autoClassificationHintOff"
+    );
+    setCollapsed(collapsed);
+    render();
+  }
+
   function setCollapsed(nextCollapsed) {
     collapsed = nextCollapsed;
     navigatorElement.classList.toggle("is-collapsed", collapsed);
     toggleButton.textContent = collapsed ? "‹" : "›";
-    toggleButton.title = collapsed ? "展开导航" : "折叠导航";
+    toggleButton.title = i18n.t(collapsed ? "expand" : "collapse");
     toggleButton.setAttribute("aria-label", toggleButton.title);
     applyLayout(false);
   }
@@ -1798,7 +3302,8 @@
 
   function resetCapturedEntries() {
     entries = [];
-    entryKeys = new Set();
+    selectedEntryKeys.clear();
+    batchMode = false;
     lastSignature = "";
     pendingDomChange = true;
     warnedEmptyMessageKeys = new Set();
@@ -1816,14 +3321,295 @@
     }
   }
 
+  function toggleFavorite(index) {
+    const entry = entries[index];
+    if (!entry) {
+      return;
+    }
+
+    entry.favorite = !entry.favorite;
+    updateEntryOrganizerRecord(entry, { favorite: entry.favorite });
+    render();
+  }
+
+  function setCategoryOverride(index, categoryOverride) {
+    const entry = entries[index];
+    if (!entry) {
+      return;
+    }
+
+    entry.categoryOverride = organizer.isCategory(categoryOverride) ? categoryOverride : "";
+    entry.category = entry.categoryOverride || entry.autoCategory;
+    updateEntryOrganizerRecord(entry, { categoryOverride: entry.categoryOverride });
+    render();
+  }
+
+  function setQuestionLabel(index, labelId, checked) {
+    const entry = entries[index];
+    if (!entry || !getLabelById(labelId)) {
+      return;
+    }
+
+    const nextIds = new Set(entry.labelIds || []);
+    if (checked) {
+      nextIds.add(labelId);
+    } else {
+      nextIds.delete(labelId);
+    }
+    entry.labelIds = Array.from(nextIds);
+    updateEntryOrganizerRecord(entry, { labelIds: entry.labelIds });
+    render();
+  }
+
+  function toggleBatchEntry(index, checked) {
+    const entry = entries[index];
+    if (!entry) {
+      return;
+    }
+    if (checked) {
+      selectedEntryKeys.add(entry.key);
+    } else {
+      selectedEntryKeys.delete(entry.key);
+    }
+    render();
+  }
+
+  function applyBatchLabel(shouldAdd) {
+    const labelId = batchLabelSelect.value;
+    if (!getLabelById(labelId) || selectedEntryKeys.size === 0) {
+      return;
+    }
+
+    entries.forEach((entry) => {
+      if (!selectedEntryKeys.has(entry.key)) {
+        return;
+      }
+      const nextIds = new Set(entry.labelIds || []);
+      if (shouldAdd) {
+        nextIds.add(labelId);
+      } else {
+        nextIds.delete(labelId);
+      }
+      entry.labelIds = Array.from(nextIds);
+      updateEntryOrganizerRecord(entry, { labelIds: entry.labelIds });
+    });
+    selectedEntryKeys.clear();
+    batchMode = false;
+    render();
+  }
+
+  async function createCustomLabel() {
+    const result = await settings.createLabel(labelCreateInput.value);
+    if (!result.ok) {
+      setManagerMessage(getLabelErrorMessage(result.reason), true);
+      return;
+    }
+    labelCreateInput.value = "";
+    setManagerMessage("");
+  }
+
+  async function renameCustomLabel(row) {
+    const labelId = row?.dataset.labelId || "";
+    const input = row?.querySelector(".manager-label-input");
+    const result = await settings.renameLabel(labelId, input?.value || "");
+    if (!result.ok) {
+      setManagerMessage(getLabelErrorMessage(result.reason), true);
+      return;
+    }
+    setManagerMessage("");
+  }
+
+  async function deleteCustomLabel(labelId) {
+    const labelDefinition = getLabelById(labelId);
+    if (!labelDefinition) {
+      setManagerMessage(i18n.t("labelMissing"), true);
+      return;
+    }
+    if (!window.confirm(i18n.t("labelDeleteConfirm", { name: labelDefinition.name }))) {
+      return;
+    }
+    const result = await settings.deleteLabel(labelId);
+    if (!result.ok) {
+      setManagerMessage(getLabelErrorMessage(result.reason), true);
+    }
+  }
+
+  function handleSettingsChange(snapshot) {
+    const previousLabelIds = new Set(customLabels.map((label) => label.id));
+    autoClassificationEnabled = snapshot.autoClassificationEnabled !== false;
+    customLabels = snapshot.labels || [];
+    const currentLabelIds = new Set(customLabels.map((label) => label.id));
+    const removedLabelIds = Array.from(previousLabelIds).filter((id) => !currentLabelIds.has(id));
+
+    if (removedLabelIds.length) {
+      Object.values(organizerState.items).forEach((record) => {
+        if (Array.isArray(record.labelIds)) {
+          record.labelIds = record.labelIds.filter((id) => currentLabelIds.has(id));
+        }
+      });
+      scheduleOrganizerStateSave();
+    }
+
+    entries = entries.map(applyOrganizerMetadata);
+    if (!autoClassificationEnabled && organizer.isCategory(currentFilter)) {
+      currentFilter = "all";
+    }
+    const activeLabelId = getActiveLabelId();
+    if (activeLabelId && !currentLabelIds.has(activeLabelId)) {
+      currentFilter = "all";
+    }
+    render();
+  }
+
   listElement.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
-    const button = target?.closest(".item");
+    const favoriteButton = target?.closest(".favorite-button");
+    if (favoriteButton) {
+      toggleFavorite(Number(favoriteButton.dataset.index));
+      return;
+    }
+
+    const mainButton = target?.closest(".item-main");
+    if (mainButton) {
+      const index = Number(mainButton.dataset.index);
+      if (batchMode) {
+        const entry = entries[index];
+        toggleBatchEntry(index, !selectedEntryKeys.has(entry?.key));
+      } else {
+        jumpToEntry(index);
+      }
+    }
+  });
+
+  listElement.addEventListener("change", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.matches(".category-select")) {
+      setCategoryOverride(Number(target.dataset.index), target.value);
+      return;
+    }
+    if (target?.matches("[data-action='question-label']")) {
+      setQuestionLabel(Number(target.dataset.index), target.dataset.labelId, target.checked);
+      return;
+    }
+    if (target?.matches("[data-action='batch-select']")) {
+      toggleBatchEntry(Number(target.dataset.index), target.checked);
+    }
+  });
+
+  searchInput.addEventListener("input", () => {
+    searchQuery = searchInput.value;
+    render();
+  });
+
+  clearSearchButton.addEventListener("click", () => {
+    searchInput.value = "";
+    searchQuery = "";
+    searchInput.focus();
+    render();
+  });
+
+  filterRow.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest(".filter-chip");
     if (!button) {
       return;
     }
 
-    jumpToEntry(Number(button.dataset.index));
+    const nextFilter = button.dataset.filter || "all";
+    currentFilter =
+      nextFilter === "all" || nextFilter === "favorites" || organizer.isCategory(nextFilter)
+        ? nextFilter
+        : "all";
+    render();
+  });
+
+  labelFilterRow.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest("button");
+    if (!button) {
+      return;
+    }
+    if (button.dataset.action === "expand-labels") {
+      labelsExpanded = !labelsExpanded;
+      render();
+      return;
+    }
+    const labelId = String(button.dataset.filter || "").replace(/^label:/, "");
+    currentFilter = getLabelById(labelId) ? `label:${labelId}` : "all";
+    render();
+  });
+
+  autoToggle.addEventListener("change", () => {
+    void settings.setAutoClassificationEnabled(autoToggle.checked);
+  });
+
+  managerToggle.addEventListener("click", () => {
+    labelManagerOpen = !labelManagerOpen;
+    setManagerMessage("");
+    render();
+    if (labelManagerOpen) {
+      labelCreateInput.focus();
+    }
+  });
+
+  managerClose.addEventListener("click", () => {
+    labelManagerOpen = false;
+    setManagerMessage("");
+    render();
+  });
+
+  labelCreateButton.addEventListener("click", () => {
+    void createCustomLabel();
+  });
+
+  labelCreateInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void createCustomLabel();
+    }
+  });
+
+  managerLabels.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const row = target?.closest(".manager-label-row");
+    if (target?.closest(".label-save")) {
+      void renameCustomLabel(row);
+      return;
+    }
+    if (target?.closest(".label-delete")) {
+      void deleteCustomLabel(row?.dataset.labelId || "");
+    }
+  });
+
+  managerLabels.addEventListener("keydown", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (event.key === "Enter" && target?.matches(".manager-label-input")) {
+      event.preventDefault();
+      void renameCustomLabel(target.closest(".manager-label-row"));
+    }
+  });
+
+  batchToggle.addEventListener("click", () => {
+    batchMode = !batchMode;
+    selectedEntryKeys.clear();
+    render();
+  });
+
+  selectVisibleButton.addEventListener("click", () => {
+    getVisibleEntries().forEach((entry) => selectedEntryKeys.add(entry.key));
+    render();
+  });
+
+  batchAddButton.addEventListener("click", () => applyBatchLabel(true));
+  batchRemoveButton.addEventListener("click", () => applyBatchLabel(false));
+  batchCancelButton.addEventListener("click", () => {
+    selectedEntryKeys.clear();
+    batchMode = false;
+    render();
+  });
+
+  languageSelect.addEventListener("change", () => {
+    void i18n.setPreference(languageSelect.value);
   });
 
   toggleButton.addEventListener("click", () => {
@@ -1850,6 +3636,8 @@
   window.addEventListener("hashchange", handleConversationChange);
   window.addEventListener("resize", handleViewportResize);
   document.addEventListener("visibilitychange", handleVisibilityChange);
+  languageUnsubscribe = i18n.subscribe(() => applyTranslations());
+  settingsUnsubscribe = settings.subscribe(handleSettingsChange);
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === "CQN_STATUS") {
@@ -1857,6 +3645,12 @@
       sendResponse({
         enabled: true,
         count: entries.length,
+        favoriteCount: getFavoriteCount(),
+        categoryCounts: getCategoryCounts(),
+        autoClassificationEnabled,
+        customLabelCount: customLabels.length,
+        labelCounts: getCurrentLabelCounts(),
+        locale: i18n.getLocale(),
         collapsed
       });
       return;
@@ -1866,7 +3660,13 @@
       refresh(true);
       sendResponse({
         enabled: true,
-        count: entries.length
+        count: entries.length,
+        favoriteCount: getFavoriteCount(),
+        categoryCounts: getCategoryCounts(),
+        autoClassificationEnabled,
+        customLabelCount: customLabels.length,
+        labelCounts: getCurrentLabelCounts(),
+        locale: i18n.getLocale()
       });
     }
   });
@@ -1877,6 +3677,8 @@
       observer.disconnect();
       window.clearTimeout(refreshTimer);
       window.clearInterval(periodicRefreshTimer);
+      languageUnsubscribe?.();
+      settingsUnsubscribe?.();
       window.removeEventListener("popstate", handleConversationChange);
       window.removeEventListener("hashchange", handleConversationChange);
       window.removeEventListener("resize", handleViewportResize);
@@ -1886,6 +3688,9 @@
     }
   };
 
+  await loadOrganizerState();
+  languageSelect.value = i18n.getPreference();
+  autoToggle.checked = autoClassificationEnabled;
   setCollapsed(false);
   refresh(true);
   startPeriodicRefresh();

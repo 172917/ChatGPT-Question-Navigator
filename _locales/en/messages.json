@@ -1,0 +1,11 @@
+{
+  "extensionName": {
+    "message": "ChatGPT Question Navigator"
+  },
+  "extensionDescription": {
+    "message": "Organize, search, favorite, label, and revisit questions in long ChatGPT conversations."
+  },
+  "actionTitle": {
+    "message": "Open ChatGPT Question Navigator"
+  }
+}
