@@ -1,66 +1,59 @@
-# ChatGPT Question Navigator Promo Script
+# ChatGPT Question Navigator Product Film
 
-Format: 16:9 horizontal video, 1920 x 1080, 20 seconds.
+Format: 16:9 horizontal video, 1920 × 1080, 37 seconds.
 
-Language: English-first bilingual captions, with Chinese as the secondary line.
+Language: English captions only.
 
-Music: `assets/grand_project-wonders-of-the-earth-550792.mp3`, starting at 30s.
+Sound: the supplied royalty-free `grand_project-wonders-of-the-earth-550792.mp3`, with a soft fade-in and fade-out. No narration is used.
 
 ## Timeline
 
-### 0-4s
+### 0–2s — Introduce
 
-字幕：
+> ChatGPT Question Navigator<br>
+> Turn long conversations into a working index.
 
-> Long conversations need a better way back.<br>
-> 长对话需要一个更稳定的回看入口。
+Warm white negative space and soft mint, sky, lavender, and peach color blocks establish the product-film visual language. The former 2–5 second interval has been removed.
 
-画面：
+### 2–7.5s — Capture
 
-- 浅色网格背景。
-- 大标题从左侧进入。
-- 对话气泡堆叠，表现长对话滚动压力。
+> Ask naturally.<br>
+> Questions are indexed as you chat.
 
-### 4-9s
+Accelerated moments from the first recording show English questions being sent and indexed.
 
-字幕：
+### 7.5–15.5s — Organize
 
-> Questions become a local working index.<br>
-> 每个问题自动变成可整理的本地索引。
+> Every question finds its place.<br>
+> Code / Solutions / Research
 
-画面：
+The panel and conversation are separated into clean rounded cards while automatic categories become visible.
 
-- 问题自动进入“代码、方案、资料、待办、其他”。
-- 分类色标依次出现，强调自动整理。
+### 15.5–22.5s — Curate
 
-### 9-15s
+> Save. Label. Refine.<br>
+> Keep the questions that matter close.
 
-字幕：
+Favorites, batch selection, and custom labels are shown without exposing unrelated browser or desktop content.
 
-> Organize, search, favorite, and jump back.<br>
-> 自动分类、搜索、收藏，再一键跳回原问题。
+### 22.5–31.5s — Return
 
-画面：
+> Jump back instantly.<br>
+> From the index to the original answer.
 
-- 展示新版问题导航面板。
-- 搜索框输入关键词，结果即时收窄。
-- 星标被点亮，再用高亮线表现一键跳转。
+The navigation recording demonstrates returning to code, solution, research, and quoted questions.
 
-### 15-20s
+### 31.5–37s — Close
 
-字幕：
+> Find the question. Return to the answer.<br>
+> Local-first · Open source · Chrome & Edge<br>
+> github.com/172917/ChatGPT-Question-Navigator
 
-> Auto categories / Search / Favorites / Bilingual<br>
-> 自动分类 / 搜索 / 收藏 / 中英切换
+## Visual Rules
 
-画面：
-
-- 回到项目海报视觉。
-- 显示项目名、本地优先和中英切换标签。
-- 结尾停留在 GitHub 项目展示感。
-
-## Notes
-
-- 不出现旧商业版本相关文案。
-- 所有画面围绕“长对话自动整理”和“本地问题索引”展开。
-- 适合 GitHub README、B 站、YouTube 或网页展示。
+- Warm paper background: `#F7F6F2`.
+- Product green: `#10A37F`.
+- Supporting colors: mint `#DDF4EC`, lavender `#E7E9FF`, sky `#E4F2FF`, peach `#FFE9DA`.
+- Crop out the address bar, conversation URL, ChatGPT history sidebar, Windows taskbar, recorder overlay, and unrelated notifications.
+- Use 0.35–0.6 second color wipes, crossfades, and subtle pushes only. Do not use spins, bounce effects, or glitch transitions.
+- Use the extension's Q mark only. Do not use OpenAI marks or imply official endorsement.

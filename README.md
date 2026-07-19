@@ -1,213 +1,264 @@
 # ChatGPT Question Navigator / ChatGPT 问题导航
 
+[![Version](https://img.shields.io/badge/version-1.2.1-10a37f)](manifest.json)
+[![Chrome](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)](#安装教程)
+[![Edge](https://img.shields.io/badge/Edge-supported-0AA0F5)](#安装教程)
+[![License](https://img.shields.io/badge/license-GPL--3.0-black)](LICENSE)
+
+一个本地优先的 Chrome / Edge 扩展，把 ChatGPT 长对话中的问题整理成可搜索、可收藏、可分类、可贴标签并能一键跳回的工作索引。
+
+ChatGPT Question Navigator is a local-first Chrome / Edge extension that turns questions in long ChatGPT conversations into a searchable, organized working index.
+
 ![ChatGPT Question Navigator poster](marketing/chatgpt-question-navigator-poster.png)
+
+## 宣传视频 / Product video
+
+[▶ 播放 37 秒宣传视频 / Watch the 37-second product video](marketing/video/exports/question-navigator-demo-github.mp4?raw=1)
+
+视频规格：1920×1080、30 fps、约 17.9 MB。视频演示了自动分类、搜索、收藏、自定义标签、批量标记、语言切换和一键跳回。
+
+Video: 1920×1080, 30 fps, approximately 17.9 MB. It demonstrates automatic categories, search, favorites, custom labels, batch labeling, language switching, and instant jump-back.
 
 ## 中文
 
-ChatGPT Question Navigator 是一个本地运行的 Chrome / Edge Manifest V3 浏览器扩展。它会在 ChatGPT 网页端当前对话里生成“问题导航”侧边栏，整理你发出的问题，并支持自动分类开关、搜索、收藏、自定义标签、分类修正和一键跳回原提问位置。
+### v1.2.1 更新内容
 
-### v1.2.1 更新
+- 新增全局“自动分类”开关；关闭后按原始提问顺序平铺显示。
+- 新增可跨对话复用的自定义标签，一个问题可以拥有多个标签。
+- 新增单题标签编辑、批量选择、全选可见结果以及批量添加/移除标签。
+- 支持简体中文和 English，并可跟随浏览器语言或手动切换。
+- 修复历史问题延迟加载后的顺序、引用文字裁切和标签菜单层级遮挡。
+- 保留搜索、收藏、人工分类修正、跳转高亮、拖动、缩放和折叠功能。
 
-- 新增全局自动分类开关；关闭后按原始提问顺序平铺显示。
-- 新增可跨对话复用的自定义标签、单题多标签和批量标记。
-- 完善中英文界面、搜索、收藏、人工分类及本地隐私存储说明。
-- 修复历史问题延迟加载后的顺序、引用摘要裁切，以及标签下拉菜单被后续卡片遮挡的问题。
+### 核心功能
 
-### 解决的痛点
+- 自动读取当前 ChatGPT 对话中已经加载的用户问题。
+- 本地归入“代码、方案、资料、待办、其他”五个固定分类。
+- 支持关闭自动分类并按提问时间顺序浏览。
+- 搜索问题正文和引用片段，支持中英文及大小写不敏感匹配。
+- 收藏重要问题，并在刷新或重新打开同一对话后恢复。
+- 手动修改问题分类，或者恢复为自动判断。
+- 创建、重命名和删除最多 30 个全局自定义标签。
+- 为单个问题添加多个标签，或者批量处理当前可见结果。
+- 点击问题即可跳回 ChatGPT 原消息，并短暂高亮。
+- 支持动态追加新问题及历史消息延迟加载。
+- 面板可拖动、缩放、折叠，并自动记住位置与尺寸。
+- 所有分类和整理逻辑均在本地运行，不调用 OpenAI API。
 
-ChatGPT 网页端的长对话目录并不是每次都会稳定出现。即使对话很长，也可能因为页面结构、窗口宽度、旧聊天加载状态、模型/功能灰度等原因看不到目录。
+## 安装教程
 
-这个扩展补上一个固定、可控的“我的问题”目录：长聊天复盘、查资料、论文学习、代码讨论、方案修改时，不用反复向上滚动找自己之前问过什么。
+### 第一步：获取项目文件
 
-## 实际效果
+任选一种方式：
 
-[![ChatGPT Question Navigator 中文使用截图](docs/images/usage-screenshot.png)](docs/images/full/usage-screenshot-zh-CN-full.png)
+1. 在 GitHub 页面点击 `Code` → `Download ZIP`，下载后完整解压。
+2. 或使用 Git：
 
-### 更多界面 / More views
+```powershell
+git clone https://github.com/172917/ChatGPT-Question-Navigator.git
+```
 
-展示图采用无损裁剪，突出插件界面；点击图片可查看未经裁剪的完整原图。
+解压或克隆后，确认所选文件夹根目录中能够直接看到 `manifest.json`、`content.js` 和 `popup.html`。不要选择只包含项目文件夹的上一级目录。
 
-<p align="center">
-  <a href="docs/images/full/popup-zh-CN-full.png"><img src="docs/images/popup-zh-CN.png" alt="中文扩展弹窗" width="45%"></a>
-  <a href="docs/images/full/popup-en-full.png"><img src="docs/images/popup-en.png" alt="English extension popup" width="45%"></a>
-</p>
+### 第二步：安装到 Chrome
 
-<p align="center">
-  <a href="docs/images/full/label-manager-en-full.png"><img src="docs/images/label-manager-en.png" alt="Custom label manager" width="45%"></a>
-</p>
+1. 在地址栏打开 `chrome://extensions/`。
+2. 打开页面右上角的“开发者模式”。
+3. 点击“加载已解压的扩展程序”。
+4. 选择包含 `manifest.json` 的项目根目录。
+5. 安装成功后，可在浏览器工具栏的扩展菜单中固定“问题导航”。
 
-<p align="center"><sub>中文扩展弹窗 · English popup · 自定义标签管理</sub></p>
+### 第三步：安装到 Edge
 
-## 功能
+1. 在地址栏打开 `edge://extensions/`。
+2. 打开左侧或页面中的“开发人员模式”。
+3. 点击“加载解压缩的扩展”。
+4. 选择包含 `manifest.json` 的项目根目录。
+5. 安装成功后，可在扩展菜单中将“问题导航”显示在工具栏。
 
-- 只在 `chatgpt.com` 和 `chat.openai.com` 页面注入脚本。
-- 自动列出当前对话中用户发送的问题。
-- 在本地自动归入“代码、方案、资料、待办、其他”五个分类。
-- 自动分类可全局开启或关闭；关闭后问题按原始提问顺序平铺显示。
-- 支持创建、重命名和删除最多 30 个全局自定义标签；一个问题可同时关联多个标签。
-- 支持单题快速编辑标签，也可以选择当前结果中的多个问题批量添加或移除标签。
-- 自定义标签可跨对话复用，问题与标签的关联仍按会话隔离。
-- 支持按问题正文或引用片段实时搜索。
-- 支持收藏问题，并在刷新或重新打开同一会话后恢复。
-- 支持手动修正分类，也可以随时恢复自动分类。
-- 如果问题引用了 ChatGPT 回答中的文字，导航项会一起显示对应引用片段。
-- 对“引用文字 + 我不明白 / 什么意思 / 解释一下”这类行内引用问题也会自动拆分显示。
-- 点击问题即可跳转到原消息位置，并短暂高亮。
-- 支持 ChatGPT 页面动态加载；捕获到新问题后增量追加。
-- 右侧悬浮导航栏可拖动、可缩放、可折叠。
-- 自动记住导航栏的位置和尺寸，不上传对话内容。
-- 支持简体中文和英文；可跟随浏览器语言，也可在面板或扩展弹窗中手动切换。
-- GPL-3.0 开源，安装后即可本地使用。
+### 第四步：首次运行
 
-## 安装方式
+1. 打开 `https://chatgpt.com/` 中的任意对话。
+2. 如果页面在安装扩展前已经打开，请刷新一次。
+3. 页面中会出现“问题导航”浮动面板。
+4. 点击扩展图标可以查看连接状态、刷新问题列表、切换自动分类和界面语言。
 
-1. 打开 Chrome 或 Edge。
-2. 进入 `chrome://extensions/` 或 `edge://extensions/`。
-3. 开启“开发者模式”。
-4. 点击“加载已解压的扩展程序”。
-5. 选择本项目目录。
-6. 打开或刷新 ChatGPT 页面。
+## 详细使用教程
 
-## 使用方式
+### 1. 浏览和跳转问题
 
-- 打开任意 ChatGPT 对话后，页面右侧会出现“问题导航”。
-- 默认“全部”视图会按分类分区；顶部分类按钮可以只看某一类或收藏的问题。
-- 使用“自动分类”开关可切换分类分组和时间顺序平铺；该设置会同步到所有 ChatGPT 页面和扩展弹窗。
-- 点击“管理标签”可创建、重命名或删除全局标签；点击问题右侧的 `#` 按钮可为单题选择多个标签。
-- 点击“批量标记”后可勾选多个问题或全选当前搜索/筛选结果，再统一添加或移除一个标签。
-- 当前会话已使用的标签会显示为筛选按钮，并可与搜索和收藏组合使用。
-- 在搜索框中输入关键词，可以同时搜索问题和引用片段。
-- 点击星标可以收藏；使用问题右侧的分类选择器可以修正分类或恢复自动判断。
-- 点击导航栏中的问题即可回到该问题所在位置。
-- 按住导航栏标题区域可以拖动位置。
-- 拖动右下角斜线手柄可以缩放导航栏大小。
-- 点击右上角箭头可以折叠导航栏；折叠后点击圆形“问”按钮或小箭头可以展开。
-- 点击扩展图标可以查看连接状态，也可以手动刷新问题列表。
-- 使用面板中的语言菜单或扩展弹窗，可以切换“自动 / 简体中文 / English”。语言选择对所有 ChatGPT 会话生效。
+- “全部”视图会按照固定分类分区显示问题，并保留原始提问编号。
+- 点击任意问题正文，页面会滚动到对应的 ChatGPT 消息并短暂高亮。
+- 如果旧问题尚未出现，可向上滚动 ChatGPT 对话使历史消息加载，再点击面板刷新按钮。
 
-## 隐私说明
+### 2. 开启或关闭自动分类
 
-扩展只读取当前 ChatGPT 页面中已经加载出来的对话内容，用于生成页面内导航。它不请求任何外部接口，不上传你的对话，也不把聊天内容保存到远程服务器。
+- 在导航面板或扩展弹窗中切换“自动分类”。
+- 开启时，问题按代码、方案、资料、待办和其他分组。
+- 关闭时，固定分类筛选和分类选择器会隐藏，问题按照原始提问顺序平铺。
+- 关闭不会删除收藏、人工分类或标签；重新开启后会恢复。
 
-扩展会在本地保存导航栏的位置和尺寸、自动分类开关、全局标签定义，以及当前会话中问题的收藏、人工分类和标签 ID。持久化内容只包含会话 ID、消息稳定标识、收藏布尔值、分类 ID 和标签 ID，不包含问题正文、引用片段、搜索词或其他聊天文本。
+### 3. 搜索问题和引用
 
-自动分类使用内置的中英文关键词和页面结构信号完成，不调用 OpenAI API，也不需要 API Key。
+- 在顶部搜索框输入关键词。
+- 搜索同时匹配问题正文和问题引用的 ChatGPT 回复片段。
+- 搜索可以和收藏、固定分类或自定义标签筛选叠加使用。
+- 清空搜索框即可恢复当前筛选下的全部结果。
 
-## 开发与工具
+### 4. 收藏问题
 
-- `manifest.json`：扩展配置和 ChatGPT 页面匹配规则。
-- `background.js`：扩展后台消息入口。
-- `i18n.js`：简体中文/英文共享词典、语言检测与全局语言偏好。
-- `organizer.js`：本地问题分类和搜索匹配逻辑。
-- `settings.js`：自动分类开关、全局标签定义、校验和跨页面实时同步。
-- `content.js`：注入 ChatGPT 页面，生成问题导航栏并处理整理、存储与跳转。
-- `popup.html` / `popup.css` / `popup.js`：扩展弹窗界面。
-- `marketing/`：项目展示用页面和素材。
-- `tools/license-generator/`：旧授权码格式的开源参考实现，仅用于审计和学习，不包含任何生产签名材料。
+- 点击问题卡片右侧的星标即可收藏或取消收藏。
+- 点击顶部“收藏”筛选，只查看已收藏问题。
+- 收藏按对话隔离，并在重新打开同一稳定会话时恢复。
 
-## 版权与许可证
+### 5. 修正自动分类
 
-Copyright (c) 2026 Xu ZiHan.
+- 自动分类开启时，每个问题卡片会显示分类选择器。
+- 可手动改为代码、方案、资料、待办或其他。
+- 选择“恢复自动”即可重新使用本地分类结果。
 
-本项目采用 GNU General Public License v3.0 授权。你可以按 GPL-3.0 的条款使用、学习、修改和分发本项目。
+### 6. 创建和管理自定义标签
 
-请保留原作者署名和许可证信息。公开仓库不代表允许他人删除作者信息、冒充原创，或把本项目伪装成自己的独立原创作品。
+1. 点击“管理标签”。
+2. 输入 1–20 个字符的标签名称并创建，例如“工作”“论文”或“本周处理”。
+3. 可在管理器中重命名或删除标签。
+4. 标签名称不区分大小写判重，最多创建 30 个。
+5. 标签定义可跨对话复用，但问题与标签的关联仍按对话隔离。
 
----
+### 7. 给单个问题添加标签
+
+1. 点击问题卡片右侧的 `#` 按钮。
+2. 在多选菜单中勾选一个或多个标签。
+3. 问题卡片最多直接显示两个标签，多余标签显示为 `+N`。
+4. 当前对话已经使用的标签会出现在顶部，点击即可筛选。
+
+### 8. 批量添加或移除标签
+
+1. 点击“批量标记”。
+2. 勾选需要处理的问题，或点击“全选可见结果”。
+3. 选择目标标签。
+4. 点击“添加”或“移除”。
+5. 搜索和筛选可以先缩小范围，再批量处理当前可见问题。
+
+### 9. 切换界面语言
+
+- 在面板语言菜单或扩展弹窗中选择“自动、简体中文、English”。
+- “自动”会根据浏览器 UI 语言选择中文或英文，无法匹配时使用英文。
+- 语言偏好对所有 ChatGPT 对话生效，并在面板与弹窗之间实时同步。
+
+### 10. 调整面板
+
+- 按住标题区域拖动面板。
+- 拖动右下角手柄调整宽度和高度。
+- 点击右上角箭头折叠；折叠后点击圆形图标或箭头重新展开。
+- 点击刷新按钮重新扫描当前页面已经加载的问题。
+
+## 常见问题
+
+### 面板没有出现
+
+- 确认页面地址是 `chatgpt.com` 或旧版 `chat.openai.com`。
+- 在扩展管理页确认插件处于启用状态且没有错误。
+- 刷新 ChatGPT 页面；安装扩展前已经打开的标签页不会自动注入。
+- 如果更新了本地代码，请在扩展管理页点击“重新加载”，然后刷新 ChatGPT。
+
+### 问题数量或顺序不完整
+
+ChatGPT 会按需加载长对话中的历史消息。先向上滚动对话，让旧消息进入页面，再点击刷新。扩展会根据稳定消息 ID 和页面顺序重新关联，不会把后加载的历史问题简单追加到末尾。
+
+### 收藏或标签没有恢复
+
+- 新建但尚未获得稳定会话 ID 的页面只使用当前页面状态。
+- 稳定对话会按会话 ID 保存整理元数据。
+- 清除浏览器扩展存储会同时清除收藏、人工分类、标签关联和界面偏好。
+
+### ChatGPT 页面更新后失效
+
+ChatGPT 的网页结构可能变化。请先重新加载扩展和页面；如果仍有问题，请在 GitHub Issues 中附上浏览器版本、复现步骤和不包含隐私内容的截图。
+
+## 隐私与本地存储
+
+扩展只读取当前 ChatGPT 页面中已经加载的内容，用于生成页面内导航。它不请求外部接口、不上传聊天内容、不远程保存问题文本，也不需要 API Key。
+
+本地保存内容包括：
+
+- 面板位置、尺寸、语言和自动分类开关。
+- 全局自定义标签的 `{id, name, color}`。
+- 按稳定会话保存的消息标识、收藏布尔值、固定分类 ID 和标签 ID。
+
+不会持久化问题正文、引用片段、搜索词或其他聊天文本。自动分类完全由本地中英文关键词、代码块、文件名和报错信号等确定性规则完成。
 
 ## English
 
-ChatGPT Question Navigator is a local Chrome / Edge Manifest V3 extension. It adds a structured navigator to the current ChatGPT conversation with an automatic-classification switch, search, favorites, reusable custom labels, category corrections, and one-click jump back.
+### Installation
 
-### What's new in v1.2.1
+1. Download and extract the repository, or run:
 
-- Adds a global automatic-classification switch with chronological flat mode.
-- Adds reusable custom labels, multiple labels per question, and batch labeling.
-- Expands bilingual UI, search, favorites, manual categories, and local privacy documentation.
-- Fixes delayed-history ordering, quoted-snippet clipping, and label menus being covered by later cards.
+```powershell
+git clone https://github.com/172917/ChatGPT-Question-Navigator.git
+```
 
-### Pain Point
-
-ChatGPT's built-in long-conversation table of contents is not always visible or stable on the web app. A long chat may still have no visible outline because of page structure, viewport width, old conversation loading state, or gradual feature rollout.
-
-This extension adds a consistent local "my questions" navigator for review, research, study, coding discussions, and multi-step planning. You can return to earlier questions without repeatedly scrolling through a long conversation.
-
-### Demo
-
-[![ChatGPT Question Navigator English usage screenshot](docs/images/usage-screenshot-en.png)](docs/images/full/usage-screenshot-en-full.png)
-
-### Features
-
-- Runs only on `chatgpt.com` and `chat.openai.com`.
-- Lists user questions in the current conversation.
-- Organizes questions locally into Code, Solutions, Research, To-dos, and Other.
-- Lets you switch automatic classification off globally and view questions in chronological order.
-- Creates, renames, and deletes up to 30 reusable global labels; each question can use multiple labels.
-- Supports both per-question label editing and batch add/remove for selected visible results.
-- Reuses label definitions across chats while keeping question assignments conversation-specific.
-- Searches question text and quoted snippets in real time.
-- Favorites questions and restores them when the same conversation is reopened.
-- Lets you correct a category or return to automatic classification.
-- Shows quoted snippets when a question references previous assistant text.
-- Handles inline quote-and-question patterns.
-- Jumps to the original message and highlights it briefly.
-- Works with dynamically loaded ChatGPT conversations.
-- Supports dragging, resizing, and collapsing the floating panel.
-- Persists panel position and size locally.
-- Supports Simplified Chinese and English with automatic browser-language detection and a manual override.
-- Does not upload or remotely store your chat content.
-- GPL-3.0 open source and usable locally after installation.
-
-### Install
-
-1. Open Chrome or Edge.
-2. Go to `chrome://extensions/` or `edge://extensions/`.
+2. Open `chrome://extensions/` or `edge://extensions/`.
 3. Enable Developer mode.
-4. Click "Load unpacked".
-5. Select this project folder.
-6. Open or refresh ChatGPT.
+4. Click **Load unpacked**.
+5. Select the folder that directly contains `manifest.json`.
+6. Open or refresh a conversation on `https://chatgpt.com/`.
 
-### Usage
+### Usage guide
 
-- Open any ChatGPT conversation and the "Question Navigator" panel appears on the page.
-- The All view groups questions by category; use the filter chips to focus on favorites or one category.
-- Toggle Auto categories from the panel or popup. When disabled, questions remain in their original chronological order.
-- Use Manage labels to create, rename, or delete global labels. Use the `#` control on a question to assign multiple labels.
-- Enter Batch label mode to select several questions or all visible results, then add or remove one label.
-- Labels used in the current conversation appear as filters and combine with search and favorites.
-- Use the search field to match both question text and quoted snippets.
-- Select the star to favorite a question. Use the category menu to correct or restore automatic classification.
-- Click a question to jump back to its original position.
-- Drag the panel header to move it.
-- Drag the bottom-right handle to resize it.
-- Use the arrow button to collapse or expand the panel.
-- Click the extension icon to check connection status or refresh the list manually.
-- Choose Auto, Simplified Chinese, or English from either the panel or popup. The preference applies across ChatGPT conversations.
+1. **Browse and jump:** click a question in the panel to return to its original ChatGPT message.
+2. **Automatic categories:** enable grouping into Code, Solutions, Research, To-dos, and Other, or disable it for a chronological flat list.
+3. **Search:** match both question text and quoted assistant snippets. Search combines with favorites, categories, and labels.
+4. **Favorites:** click the star and use the Favorites filter to revisit important questions.
+5. **Category correction:** choose a fixed category or restore automatic classification from the card menu.
+6. **Custom labels:** use Manage labels to create, rename, or delete reusable labels. A question can have multiple labels.
+7. **Single-question labeling:** click the `#` button and select labels from the checklist.
+8. **Batch labeling:** select several visible questions, choose a label, then add or remove it in one operation.
+9. **Language:** choose Auto, Simplified Chinese, or English from the panel or popup.
+10. **Panel controls:** drag the header, resize from the bottom-right handle, collapse with the arrow, or refresh the current question list.
+
+### Troubleshooting
+
+- Refresh ChatGPT after installing or reloading the extension.
+- Confirm the extension is enabled and the page is on `chatgpt.com` or `chat.openai.com`.
+- For incomplete long conversations, scroll upward to load older messages, then refresh the navigator.
+- New chats without a stable conversation ID use page-only organizer state until the ID becomes available.
+- If a ChatGPT page update breaks detection, open a GitHub issue with reproduction steps and a privacy-safe screenshot.
 
 ### Privacy
 
-The extension only reads the already loaded content in the current ChatGPT page to build an in-page navigator. It does not call an external API, upload your conversations, or save chat text to a remote server.
+The extension reads only content already loaded in the current ChatGPT page. It does not call an external API, upload chat content, remotely store question text, or require an API key.
 
-The extension stores panel layout, the global automatic-classification setting, and global label definitions locally. For each stable ChatGPT conversation it can also store message identifiers, favorite flags, manual category IDs, and label IDs. It never stores question text, quoted snippets, search terms, or other chat content.
+It locally stores panel preferences, automatic-classification and language settings, global label definitions, and conversation-scoped organizer metadata. Persisted organizer metadata contains stable identifiers, favorite flags, fixed category IDs, and label IDs—never question text, quoted snippets, or search terms.
 
-Automatic classification uses built-in bilingual rules and page-structure signals. It does not call the OpenAI API and does not require an API key.
+## Development and validation
 
-### Development
+Important files:
 
-- `manifest.json`: extension manifest and ChatGPT match rules.
-- `background.js`: background message entrypoint.
-- `i18n.js`: shared Simplified Chinese/English strings, locale detection, and global language preference.
-- `organizer.js`: local category classification and search matching.
-- `settings.js`: global automatic-classification setting, custom-label validation, and live cross-page synchronization.
-- `content.js`: injected into ChatGPT to render the navigator and handle organization, persistence, and jump behavior.
-- `popup.html` / `popup.css` / `popup.js`: extension popup UI.
-- `marketing/`: project poster and marketing assets.
-- `tools/license-generator/`: open reference implementation for the legacy license-token format. It is kept for auditability and does not contain production signing material.
+- `manifest.json`: Manifest V3 configuration and supported ChatGPT URLs.
+- `i18n.js`: Simplified Chinese/English dictionaries and locale preference.
+- `organizer.js`: local classification and search rules.
+- `settings.js`: automatic-classification and global-label settings.
+- `content.js`: ChatGPT page integration, navigator UI, persistence, and jump behavior.
+- `popup.html`, `popup.css`, `popup.js`: extension popup.
+- `marketing/video/`: product-film source, renderer, script, and GitHub video.
 
-### License
+Run the JavaScript tests:
+
+```powershell
+node --test .\tests\*.test.cjs
+```
+
+Validate the exported videos:
+
+```powershell
+node marketing/video/render-video.cjs --validate-only --profile all
+```
+
+The extension has no network permission or external runtime dependency. Raw ChatGPT recordings used for the product film are not stored in this repository.
+
+## License
 
 Copyright (c) 2026 Xu ZiHan.
 
-This project is licensed under the GNU General Public License v3.0. You may use, study, modify, and distribute it under the GPL-3.0 terms.
-
-Please keep the original author attribution and license notice. A public repository does not permit removing attribution, impersonating the original author, or presenting this project as someone else's independent original work.
+This project is licensed under the [GNU General Public License v3.0](LICENSE). You may use, study, modify, and distribute it under the GPL-3.0 terms while preserving the license and original attribution.

@@ -1,29 +1,25 @@
 # Video Assets
 
-This folder is reserved for generated or cropped video assets.
+The 37-second product film reads its two source recordings from explicit local paths. Raw recordings are never copied into this repository.
 
-The current promo page reuses the generated repository images directly:
-
-- `../chatgpt-question-navigator-poster.png`
-- `../../docs/images/usage-screenshot.png`
-- `../../docs/images/usage-screenshot-en.png`
-
-Music:
-
-- `grand_project-wonders-of-the-earth-550792.mp3`
-- The promo page starts playback at `30s` and uses the next 20 seconds for the video.
-
-Export and validate the final 1920 x 1080 MP4 from the repository root:
+Render both deliverables from the repository root:
 
 ```powershell
-node marketing/video/render-video.cjs
+node marketing/video/render-video.cjs `
+  --source-chat "C:\path\to\chat-recording.mp4" `
+  --source-nav "C:\path\to\navigation-recording.mp4" `
+  --profile all
 ```
 
-Run metadata validation without re-rendering:
+Profiles:
+
+- `master`: 1920 × 1080, 60 fps, 12 Mbps target video bitrate.
+- `github`: 1920 × 1080, 30 fps, 4 Mbps target video bitrate, maximum 25 MB.
+
+Validate existing exports without rendering:
 
 ```powershell
-node marketing/video/render-video.cjs --validate-only
+node marketing/video/render-video.cjs --validate-only --profile all
 ```
 
-Keep exported video files out of git unless they are intentionally added for a
-release or documentation update.
+The soundtrack uses `grand_project-wonders-of-the-earth-550792.mp3`, supplied by the project owner. The renderer decodes it locally, applies controlled gain plus fade-in/fade-out, and records it into both output profiles.

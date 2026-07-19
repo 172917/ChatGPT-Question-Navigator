@@ -1,229 +1,207 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ChatGPT Question Navigator 16:9 Promo Video</title>
+    <title>ChatGPT Question Navigator — Product Film</title>
     <style>
       :root {
         color-scheme: light;
-        --ink: #111827;
-        --muted: #667085;
+        --ink: #151716;
+        --muted: #666d69;
         --mint: #10a37f;
-        --mint-dark: #08745d;
-        --blue: #2563eb;
-        --line: rgba(17, 24, 39, 0.14);
-        --panel: rgba(255, 255, 255, 0.86);
+        --paper: #f7f6f2;
+        --line: rgba(21, 23, 22, 0.13);
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
 
       body {
         min-height: 100vh;
         margin: 0;
         background:
-          radial-gradient(circle at 80% 12%, rgba(37, 99, 235, 0.2), transparent 280px),
-          radial-gradient(circle at 14% 80%, rgba(16, 163, 127, 0.16), transparent 300px),
-          linear-gradient(135deg, #f9fff9 0%, #eef9f4 45%, #f7fbff 100%);
+          radial-gradient(circle at 12% 10%, rgba(221, 244, 236, 0.9), transparent 28rem),
+          radial-gradient(circle at 92% 80%, rgba(228, 242, 255, 0.9), transparent 34rem),
+          var(--paper);
         color: var(--ink);
-        font-family: "Microsoft YaHei", "DengXian", "Segoe UI", sans-serif;
+        font-family: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
       }
 
       .page {
         display: grid;
         gap: 18px;
-        width: min(1180px, calc(100vw - 32px));
+        width: min(1280px, calc(100vw - 32px));
         margin: 0 auto;
-        padding: 24px 0;
+        padding: 24px 0 32px;
       }
 
       .toolbar {
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        gap: 20px;
+        padding: 14px 16px;
         border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--panel);
-        padding: 12px;
-        box-shadow: 0 18px 44px rgba(17, 24, 39, 0.08);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.84);
+        box-shadow: 0 16px 48px rgba(40, 46, 43, 0.08);
+        backdrop-filter: blur(18px);
       }
 
-      .title {
-        display: grid;
-        gap: 2px;
-      }
-
-      .title strong {
-        font-size: 15px;
-      }
-
-      .title span {
-        color: var(--muted);
-        font-size: 12px;
-      }
-
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
+      .title { display: grid; gap: 3px; }
+      .title strong { font-size: 16px; letter-spacing: -0.02em; }
+      .title span { color: var(--muted); font-size: 12px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
       button {
-        min-height: 38px;
-        border: 0;
-        border-radius: 8px;
+        min-height: 40px;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        padding: 0 17px;
         background: var(--mint);
-        color: #ffffff;
+        color: white;
         cursor: pointer;
         font: inherit;
         font-size: 13px;
-        font-weight: 800;
-        padding: 0 14px;
-      }
-
-      button:hover {
-        background: var(--mint-dark);
+        font-weight: 750;
       }
 
       button.secondary {
-        border: 1px solid #d7e0ea;
-        background: #ffffff;
-        color: #304158;
+        border-color: var(--line);
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--ink);
       }
 
-      button.secondary:hover {
-        border-color: rgba(16, 163, 127, 0.48);
-        background: rgba(16, 163, 127, 0.08);
-      }
-
-      button:disabled {
-        background: #a6b0bf;
-        cursor: not-allowed;
-      }
+      button:disabled { cursor: wait; opacity: 0.5; }
 
       .stage-wrap {
         overflow: hidden;
-        border: 1px solid rgba(17, 24, 39, 0.14);
-        border-radius: 8px;
-        background: #ffffff;
-        box-shadow: 0 30px 80px rgba(17, 24, 39, 0.18);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: white;
+        box-shadow: 0 30px 90px rgba(34, 39, 36, 0.14);
       }
 
       canvas {
         display: block;
         width: 100%;
         aspect-ratio: 16 / 9;
-        background: #f7fbff;
+        background: var(--paper);
       }
 
       .status {
-        min-height: 18px;
+        min-height: 20px;
         margin: 0;
         color: var(--muted);
-        font-size: 12px;
-        line-height: 1.5;
+        font-size: 13px;
       }
     </style>
   </head>
   <body>
     <main class="page">
-      <section class="toolbar" aria-label="视频控制">
+      <section class="toolbar" aria-label="Video controls">
         <div class="title">
-          <strong>ChatGPT Question Navigator 宣传视频</strong>
-          <span>1920 x 1080 / 20 秒 / MP3 音乐 / WebM & MP4 导出</span>
+          <strong>Question Navigator — 37 second product film</strong>
+          <span id="profileLabel">1920 × 1080 · 60 fps · supplied royalty-free soundtrack</span>
         </div>
         <div class="actions">
-          <button id="playButton" type="button">播放预览</button>
-          <button id="restartButton" class="secondary" type="button">重播</button>
-          <button id="exportButton" class="secondary" type="button">导出 WebM</button>
-          <button id="exportMp4Button" class="secondary" type="button">导出 MP4</button>
+          <button id="playButton" type="button">Play preview</button>
+          <button id="restartButton" class="secondary" type="button">Restart</button>
+          <button id="exportButton" class="secondary" type="button">Export MP4</button>
         </div>
       </section>
 
-      <section class="stage-wrap" aria-label="视频画面">
+      <section class="stage-wrap" aria-label="Product film preview">
         <canvas id="stage" width="1920" height="1080"></canvas>
       </section>
 
-      <p id="status" class="status">素材加载中...</p>
+      <p id="status" class="status">Loading source recordings…</p>
     </main>
 
     <script>
       const WIDTH = 1920;
       const HEIGHT = 1080;
-      const DURATION = 20;
-      const FPS = 60;
-      const posterUrl = "../chatgpt-question-navigator-poster.png";
-      const screenshotUrl = "../../docs/images/usage-screenshot.png";
-      const musicUrl = "assets/grand_project-wonders-of-the-earth-550792.mp3";
-      const MUSIC_START_SECONDS = 30;
+      const DURATION = 37;
+      const params = new URLSearchParams(location.search);
+      const PROFILE = params.get("profile") === "github" ? "github" : "master";
+      const FPS = Number(params.get("fps")) || (PROFILE === "github" ? 30 : 60);
+      const VIDEO_BITRATE = Number(params.get("bitrate")) || (PROFILE === "github" ? 4000000 : 12000000);
+      const SOURCE_CHAT = "/__source/chat.mp4";
+      const SOURCE_NAV = "/__source/nav.mp4";
+      const SOURCE_MUSIC = "/marketing/video/assets/grand_project-wonders-of-the-earth-550792.mp3";
+      const OUTPUT_NAME = PROFILE === "github"
+        ? "question-navigator-demo-github.mp4"
+        : "question-navigator-demo-master-1080p.mp4";
+
+      const COLORS = {
+        ink: "#151716",
+        muted: "#666d69",
+        paper: "#f7f6f2",
+        mint: "#10a37f",
+        mintSoft: "#ddf4ec",
+        lavender: "#e7e9ff",
+        sky: "#e4f2ff",
+        peach: "#ffe9da",
+        white: "#ffffff"
+      };
 
       const canvas = document.getElementById("stage");
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", { alpha: false });
       const playButton = document.getElementById("playButton");
       const restartButton = document.getElementById("restartButton");
       const exportButton = document.getElementById("exportButton");
-      const exportMp4Button = document.getElementById("exportMp4Button");
       const statusText = document.getElementById("status");
+      const profileLabel = document.getElementById("profileLabel");
+      profileLabel.textContent = `1920 × 1080 · ${FPS} fps · supplied royalty-free soundtrack`;
 
-      let startTime = 0;
-      let rafId = 0;
-      let isPlaying = false;
-      let audioCtx = null;
-      let activeAudioNodes = [];
-      let activeAudioElements = [];
-      let musicMetadataLoaded = false;
-      const images = {};
+      let animationFrame = 0;
+      let playbackStartedAt = 0;
+      let playing = false;
+      let audioContext = null;
+      let audioNodes = [];
+      let musicBytes = null;
+      let musicBuffer = null;
+      let clipTimers = [];
 
-      function loadImage(name, src) {
-        return new Promise((resolve, reject) => {
-          const image = new Image();
-          image.onload = () => {
-            images[name] = image;
-            resolve(image);
-          };
-          image.onerror = reject;
-          image.src = src;
-        });
-      }
+      const clipSpecs = [
+        { id: "askOne", source: SOURCE_CHAT, outputStart: 2, outputEnd: 2.7, sourceStart: 59.7727, sourceEnd: 62 },
+        { id: "askTwo", source: SOURCE_CHAT, outputStart: 2.7, outputEnd: 4.9, sourceStart: 84, sourceEnd: 92 },
+        { id: "askThree", source: SOURCE_CHAT, outputStart: 4.9, outputEnd: 7.5, sourceStart: 111, sourceEnd: 122 },
+        { id: "categories", source: SOURCE_CHAT, outputStart: 7.5, outputEnd: 15.5, sourceStart: 157.5, sourceEnd: 169.5 },
+        { id: "labels", source: SOURCE_CHAT, outputStart: 15.5, outputEnd: 22.5, sourceStart: 142.5, sourceEnd: 157 },
+        { id: "jump", source: SOURCE_NAV, outputStart: 22.5, outputEnd: 31.5, sourceStart: 2.2, sourceEnd: 25.2 }
+      ].map((spec) => ({
+        ...spec,
+        rate: (spec.sourceEnd - spec.sourceStart) / (spec.outputEnd - spec.outputStart),
+        video: null
+      }));
 
-      function loadMusicMetadata() {
-        return new Promise((resolve) => {
-          const audio = new Audio();
-          audio.preload = "metadata";
-          audio.onloadedmetadata = () => {
-            musicMetadataLoaded = true;
-            resolve(audio.duration);
-          };
-          audio.onerror = () => {
-            musicMetadataLoaded = false;
-            resolve(0);
-          };
-          audio.src = musicUrl;
-        });
-      }
-
-      function clamp(value, min, max) {
+      function clamp(value, min = 0, max = 1) {
         return Math.min(Math.max(value, min), max);
       }
 
-      function easeOutCubic(value) {
-        return 1 - Math.pow(1 - clamp(value, 0, 1), 3);
+      function mix(a, b, amount) {
+        return a + (b - a) * amount;
+      }
+
+      function easeOut(value) {
+        return 1 - Math.pow(1 - clamp(value), 3);
       }
 
       function easeInOut(value) {
-        const x = clamp(value, 0, 1);
+        const x = clamp(value);
         return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
       }
 
-      function sceneProgress(time, start, end) {
-        return clamp((time - start) / (end - start), 0, 1);
+      function progress(time, start, end) {
+        return clamp((time - start) / (end - start));
       }
 
-      function drawRoundedRect(x, y, width, height, radius) {
+      function sceneOpacity(time, start, end, fade = 0.45) {
+        return Math.min(progress(time, start, start + fade), 1 - progress(time, end - fade, end));
+      }
+
+      function roundedPath(x, y, width, height, radius) {
         const r = Math.min(radius, width / 2, height / 2);
         ctx.beginPath();
         ctx.moveTo(x + r, y);
@@ -234,894 +212,785 @@
         ctx.closePath();
       }
 
-      function fillRoundedRect(x, y, width, height, radius, fillStyle) {
-        drawRoundedRect(x, y, width, height, radius);
-        ctx.fillStyle = fillStyle;
+      function fillRound(x, y, width, height, radius, color) {
+        roundedPath(x, y, width, height, radius);
+        ctx.fillStyle = color;
         ctx.fill();
       }
 
-      function strokeRoundedRect(x, y, width, height, radius, strokeStyle, lineWidth = 2) {
-        drawRoundedRect(x, y, width, height, radius);
-        ctx.strokeStyle = strokeStyle;
+      function strokeRound(x, y, width, height, radius, color, lineWidth = 2) {
+        roundedPath(x, y, width, height, radius);
+        ctx.strokeStyle = color;
         ctx.lineWidth = lineWidth;
         ctx.stroke();
       }
 
-      function drawBackground(time) {
-        const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-        gradient.addColorStop(0, "#fcfff8");
-        gradient.addColorStop(0.48, "#eef9f4");
-        gradient.addColorStop(1, "#f7fbff");
-        ctx.fillStyle = gradient;
+      function drawBackground(time, accent = COLORS.mintSoft) {
+        ctx.fillStyle = COLORS.paper;
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        const drift = Math.sin(time * 0.28) * 26;
+        const gradient = ctx.createRadialGradient(1480 + drift, 170, 20, 1480 + drift, 170, 620);
+        gradient.addColorStop(0, `${accent}cc`);
+        gradient.addColorStop(1, `${accent}00`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(760, 0, 1160, 800);
 
         ctx.save();
         ctx.globalAlpha = 0.55;
-        ctx.strokeStyle = "rgba(17, 24, 39, 0.05)";
-        ctx.lineWidth = 2;
-        const offset = (time * 12) % 64;
-        for (let x = -64 + offset; x <= WIDTH; x += 64) {
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, HEIGHT);
-          ctx.stroke();
-        }
-        for (let y = -64 + offset; y <= HEIGHT; y += 64) {
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(WIDTH, y);
-          ctx.stroke();
-        }
+        ctx.fillStyle = COLORS.sky;
+        ctx.beginPath();
+        ctx.arc(80, 960, 330, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
 
         ctx.save();
-        ctx.globalAlpha = 0.18;
-        ctx.strokeStyle = "#10a37f";
-        ctx.lineWidth = 46;
-        ctx.beginPath();
-        ctx.arc(1540, 980, 420 + Math.sin(time * 0.7) * 10, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      function drawBrand(x, y, scale = 1) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(scale, scale);
-        fillRoundedRect(0, 0, 74, 74, 18, "#10a37f");
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "900 34px 'Microsoft YaHei', sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("问", 37, 38);
-        ctx.textAlign = "left";
-        ctx.fillStyle = "#667085";
-        ctx.font = "800 24px 'Microsoft YaHei', sans-serif";
-        ctx.fillText("ChatGPT Navigator", 96, 26);
-        ctx.fillStyle = "#111827";
-        ctx.font = "900 42px 'Microsoft YaHei', sans-serif";
-        ctx.fillText("ChatGPT 问题导航", 96, 66);
-        ctx.restore();
-      }
-
-      function drawBrowserShell(x, y, width, height, alpha = 1) {
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.shadowColor = "rgba(17, 24, 39, 0.16)";
-        ctx.shadowBlur = 46;
-        ctx.shadowOffsetY = 24;
-        fillRoundedRect(x, y, width, height, 30, "rgba(255,255,255,0.82)");
-        ctx.shadowColor = "transparent";
-        strokeRoundedRect(x, y, width, height, 30, "rgba(17,24,39,0.14)", 2);
-        ctx.fillStyle = "#ff5f57";
-        ctx.beginPath();
-        ctx.arc(x + 46, y + 42, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#ffbd2e";
-        ctx.beginPath();
-        ctx.arc(x + 76, y + 42, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#28c840";
-        ctx.beginPath();
-        ctx.arc(x + 106, y + 42, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(17,24,39,0.1)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x, y + 76);
-        ctx.lineTo(x + width, y + 76);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      function drawChatStack(x, y, width, count, progress) {
-        for (let i = 0; i < count; i += 1) {
-          const appear = easeOutCubic(progress * 1.35 - i * 0.12);
-          if (appear <= 0) {
-            continue;
+        ctx.globalAlpha = 0.065;
+        ctx.fillStyle = COLORS.ink;
+        for (let y = 54; y < HEIGHT; y += 42) {
+          for (let x = 54; x < WIDTH; x += 42) {
+            ctx.beginPath();
+            ctx.arc(x, y, 1.35, 0, Math.PI * 2);
+            ctx.fill();
           }
-          const isUser = i % 2 === 0;
-          const bubbleWidth = isUser ? width * 0.62 : width * 0.72;
-          const bx = isUser ? x + width - bubbleWidth : x;
-          const by = y + i * 86 - progress * 70;
-          ctx.save();
-          ctx.globalAlpha = appear * 0.95;
-          fillRoundedRect(bx, by, bubbleWidth, 58, 18, isUser ? "#e7f8f2" : "#f2f4f7");
-          ctx.fillStyle = "rgba(17,24,39,0.16)";
-          fillRoundedRect(bx + 22, by + 19, bubbleWidth - 56, 8, 99, ctx.fillStyle);
-          fillRoundedRect(bx + 22, by + 35, bubbleWidth * 0.52, 8, 99, ctx.fillStyle);
-          ctx.restore();
         }
+        ctx.restore();
       }
 
-      function drawNavCard(x, y, scale, alpha = 1) {
+      function drawMark(x, y, scale = 1, showName = true) {
         ctx.save();
         ctx.translate(x, y);
         ctx.scale(scale, scale);
-        ctx.globalAlpha = alpha;
-        ctx.shadowColor = "rgba(16, 24, 40, 0.18)";
-        ctx.shadowBlur = 46;
-        ctx.shadowOffsetY = 24;
-        fillRoundedRect(0, 0, 360, 460, 24, "rgba(255,255,255,0.99)");
-        ctx.shadowColor = "transparent";
-        strokeRoundedRect(0, 0, 360, 460, 24, "rgba(16,163,127,0.32)", 2);
-        fillRoundedRect(0, 0, 360, 84, 24, "rgba(238,252,247,0.99)");
-        fillRoundedRect(22, 21, 42, 42, 11, "#10a37f");
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "900 22px 'Microsoft YaHei', sans-serif";
+        fillRound(0, 0, 58, 58, 17, COLORS.mint);
+        ctx.fillStyle = COLORS.white;
+        ctx.font = "800 31px 'Aptos Display', 'Segoe UI Variable', sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText("问", 43, 43);
-        ctx.textAlign = "left";
-        ctx.fillStyle = "#17202e";
-        ctx.font = "900 24px 'Microsoft YaHei', sans-serif";
-        ctx.fillText("问题导航", 78, 39);
-        ctx.fillStyle = "#667085";
-        ctx.font = "800 16px 'Microsoft YaHei', sans-serif";
-        ctx.fillText("12 个问题 · 3 个收藏", 78, 61);
-
-        fillRoundedRect(22, 98, 316, 42, 12, "#f8fafc");
-        strokeRoundedRect(22, 98, 316, 42, 12, "rgba(17,24,39,0.12)", 2);
-        ctx.fillStyle = "#98a2b3";
-        ctx.font = "800 14px 'Microsoft YaHei', sans-serif";
-        ctx.fillText("⌕  搜索问题或引用…", 40, 124);
-
-        const filters = [
-          ["全部 12", 22, 82, true],
-          ["收藏 3", 112, 76, false],
-          ["代码 4", 196, 72, false]
-        ];
-        filters.forEach(([label, x, width, active]) => {
-          fillRoundedRect(x, 150, width, 30, 15, active ? "#10a37f" : "#eef3f7");
-          ctx.fillStyle = active ? "#ffffff" : "#526174";
-          ctx.font = "900 12px 'Microsoft YaHei', sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText(label, x + width / 2, 170);
-        });
-        ctx.textAlign = "left";
-
-        const items = [
-          ["01", "总结这段资料的重点", "资料 · Research", "★"],
-          ["02", "修复这段代码的报错", "代码 · Code", "☆"]
-        ];
-        items.forEach((item, index) => {
-          const itemYPositions = [215, 330];
-          const iy = itemYPositions[index];
-          const itemHeight = 92;
-          const accent = index === 0 ? "#0891b2" : "#2563eb";
-          fillRoundedRect(22, iy, 316, itemHeight, 16, "rgba(248,250,252,0.99)");
-          strokeRoundedRect(22, iy, 316, itemHeight, 16, accent, 3);
-          fillRoundedRect(40, iy + 16, 46, 34, 10, "#ffffff");
-          ctx.fillStyle = accent;
-          ctx.font = "900 18px 'Microsoft YaHei', sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText(item[0], 63, iy + 39);
+        ctx.fillText("Q", 29, 30);
+        if (showName) {
           ctx.textAlign = "left";
-          ctx.fillStyle = "#17202e";
-          ctx.font = "900 18px 'Microsoft YaHei', sans-serif";
-          ctx.fillText(item[1], 104, iy + 38);
-          fillRoundedRect(104, iy + 58, 144, 23, 8, "#ffffff");
-          ctx.fillStyle = accent;
-          ctx.font = "800 12px 'Microsoft YaHei', sans-serif";
-          ctx.fillText(item[2], 116, iy + 75);
-          ctx.fillStyle = item[3] === "★" ? "#d97706" : "#94a3b8";
-          ctx.font = "900 23px 'Microsoft YaHei', sans-serif";
-          ctx.fillText(item[3], 296, iy + 42);
-        });
-        ctx.restore();
-      }
-
-      function drawHeadline(text, subtext, x, y, progress) {
-        const p = easeOutCubic(progress);
-        ctx.save();
-        ctx.translate(x - 80 + p * 80, y);
-        ctx.globalAlpha = p;
-        ctx.fillStyle = "#111827";
-        ctx.font = "900 82px 'Microsoft YaHei', sans-serif";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-        const lines = text.split("\n");
-        lines.forEach((line, index) => {
-          ctx.fillStyle = line.includes("问题导航") ? "#08745d" : "#111827";
-          ctx.fillText(line, 0, index * 94);
-        });
-        ctx.fillStyle = "#344054";
-        ctx.font = "800 34px 'Microsoft YaHei', sans-serif";
-        wrapText(subtext, 0, lines.length * 94 + 32, 720, 48);
-        ctx.restore();
-      }
-
-      function drawBilingualHeadline(english, chinese, subtext, x, y, progress) {
-        const p = easeOutCubic(progress);
-        ctx.save();
-        ctx.translate(x - 80 + p * 80, y);
-        ctx.globalAlpha = p;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-
-        ctx.fillStyle = "#111827";
-        ctx.font = "900 78px 'Segoe UI', 'Microsoft YaHei', sans-serif";
-        const englishLines = english.split("\n");
-        englishLines.forEach((line, index) => {
-          ctx.fillStyle = line.includes("Question Navigator") || line.includes("Jump Back")
-            ? "#08745d"
-            : "#111827";
-          ctx.fillText(line, 0, index * 88);
-        });
-
-        const zhY = englishLines.length * 88 + 18;
-        ctx.fillStyle = "#1d2939";
-        ctx.font = "900 38px 'Microsoft YaHei', sans-serif";
-        ctx.fillText(chinese, 0, zhY);
-
-        ctx.fillStyle = "#344054";
-        ctx.font = "800 28px 'Segoe UI', 'Microsoft YaHei', sans-serif";
-        wrapText(subtext, 0, zhY + 58, 760, 42);
-        ctx.restore();
-      }
-
-      function wrapText(text, x, y, maxWidth, lineHeight) {
-        const chars = [...text];
-        let line = "";
-        let currentY = y;
-        chars.forEach((char) => {
-          const test = line + char;
-          if (ctx.measureText(test).width > maxWidth && line) {
-            ctx.fillText(line, x, currentY);
-            line = char;
-            currentY += lineHeight;
-          } else {
-            line = test;
-          }
-        });
-        if (line) {
-          ctx.fillText(line, x, currentY);
+          ctx.fillStyle = COLORS.ink;
+          ctx.font = "720 23px 'Aptos', 'Segoe UI Variable', sans-serif";
+          ctx.fillText("QUESTION NAVIGATOR", 78, 30);
         }
+        ctx.restore();
       }
 
-      function drawCaption(text, progress) {
-        const p = easeOutCubic(progress);
+      function drawEyebrow(text, x, y, alpha = 1) {
         ctx.save();
-        ctx.globalAlpha = p;
-        fillRoundedRect(360, 904, 1200, 86, 22, "rgba(17, 24, 39, 0.86)");
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "900 32px 'Microsoft YaHei', sans-serif";
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = COLORS.mint;
+        ctx.font = "700 20px 'Aptos', 'Segoe UI Variable', sans-serif";
+        ctx.letterSpacing = "2px";
+        ctx.textAlign = "left";
+        ctx.fillText(text.toUpperCase(), x, y);
+        ctx.restore();
+      }
+
+      function drawHeadline(lines, x, y, size, alpha = 1, maxWidth = 1500) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = COLORS.ink;
+        ctx.font = `650 ${size}px 'Aptos Display', 'Segoe UI Variable', sans-serif`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        const lineHeight = size * 0.98;
+        lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight, maxWidth));
+        ctx.restore();
+      }
+
+      function drawBody(text, x, y, size, alpha = 1) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = COLORS.muted;
+        ctx.font = `500 ${size}px 'Aptos', 'Segoe UI Variable', sans-serif`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText(text, x, y);
+        ctx.restore();
+      }
+
+      function drawPill(text, x, y, fill, color = COLORS.ink, alpha = 1) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = "650 22px 'Aptos', 'Segoe UI Variable', sans-serif";
+        const width = ctx.measureText(text).width + 42;
+        fillRound(x, y, width, 48, 24, fill);
+        ctx.fillStyle = color;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(text, 960, 947);
+        ctx.fillText(text, x + width / 2, y + 25);
+        ctx.restore();
+        return width;
+      }
+
+      function drawVideoCrop(video, source, dest, radius = 28, alpha = 1, zoom = 1) {
+        if (!video || video.readyState < 2) return;
+        const { sx, sy, sw, sh } = source;
+        const { x, y, w, h } = dest;
+        const zw = sw / zoom;
+        const zh = sh / zoom;
+        const zx = sx + (sw - zw) / 2;
+        const zy = sy + (sh - zh) / 2;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.shadowColor = "rgba(28, 33, 30, 0.18)";
+        ctx.shadowBlur = 52;
+        ctx.shadowOffsetY = 22;
+        fillRound(x, y, w, h, radius, COLORS.white);
+        ctx.shadowColor = "transparent";
+        roundedPath(x, y, w, h, radius);
+        ctx.clip();
+        ctx.drawImage(video, zx, zy, zw, zh, x, y, w, h);
+        ctx.restore();
+        strokeRound(x, y, w, h, radius, "rgba(21,23,22,0.12)", 2);
+      }
+
+      function drawCursorRipple(x, y, phase, color = COLORS.mint) {
+        const p = clamp(phase);
+        ctx.save();
+        ctx.globalAlpha = (1 - p) * 0.5;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 5 - p * 3;
+        ctx.beginPath();
+        ctx.arc(x, y, 18 + p * 38, 0, Math.PI * 2);
+        ctx.stroke();
         ctx.restore();
       }
 
-      function drawBilingualCaption(english, chinese, progress) {
-        const p = easeOutCubic(progress);
+      function getActiveClip(time) {
+        return clipSpecs.find((clip) => time >= clip.outputStart && time < clip.outputEnd) || null;
+      }
+
+      function drawProductLayout(clip, time, alpha, options = {}) {
+        if (!clip) return;
+        const sceneP = easeInOut(options.sceneProgress || 0);
+        const lift = mix(28, 0, sceneP);
+        const zoom = 1 + sceneP * 0.018;
+        // Include the navigator's full left edge. The previous crop started
+        // inside the panel and clipped the filter pills and card borders.
+        const panel = clip.id === "jump"
+          ? { sx: 72, sy: 140, sw: 480, sh: 1100 }
+          : { sx: 104, sy: 140, sw: 480, sh: 1100 };
+        const chat = { sx: 845, sy: 180, sw: 1370, sh: 833 };
+
+        drawVideoCrop(
+          clip.video,
+          chat,
+          { x: 570, y: 174 + lift, w: 1240, h: 764 },
+          34,
+          alpha,
+          zoom
+        );
+        drawVideoCrop(
+          clip.video,
+          panel,
+          { x: 110, y: 190 - lift * 0.35, w: 410, h: 746 },
+          30,
+          alpha,
+          1 + sceneP * 0.01
+        );
+
         ctx.save();
-        ctx.globalAlpha = p;
-        fillRoundedRect(310, 886, 1300, 112, 24, "rgba(17, 24, 39, 0.88)");
-        ctx.textAlign = "center";
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = "rgba(16,163,127,0.55)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(516, 566);
+        ctx.bezierCurveTo(540, 536, 552, 536, 576, 548);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawOpening(time) {
+        drawBackground(time, COLORS.mintSoft);
+        const p = easeOut(progress(time, 0, 1.25));
+        const leave = 1 - easeInOut(progress(time, 3.05, 3.5));
+        const alpha = p * leave;
+
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.96;
+        fillRound(1260, 120, 510, 244, 96, COLORS.mintSoft);
+        fillRound(1454, 326, 316, 224, 88, COLORS.lavender);
+        fillRound(1180, 520, 590, 300, 110, COLORS.peach);
+        fillRound(1400, 785, 370, 170, 78, COLORS.sky);
+        ctx.restore();
+
+        drawMark(120, 106, 1, true);
+        drawEyebrow("A local-first browser extension", 126, 276, alpha);
+        drawHeadline(["ChatGPT", "Question Navigator"], 118, 326, 112, alpha, 1020);
+        drawBody("Turn long conversations into a working index.", 126, 586, 36, alpha);
+
+        const lineP = easeOut(progress(time, 0.6, 2.1));
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.85;
+        ctx.fillStyle = COLORS.mint;
+        ctx.fillRect(126, 678, 430 * lineP, 5);
+        ctx.restore();
+      }
+
+      function drawAskScene(time) {
+        drawBackground(time, COLORS.sky);
+        const alpha = sceneOpacity(time, 2, 7.5);
+        const clip = getActiveClip(time);
+        const p = progress(time, 2, 7.5);
+        drawMark(96, 76, 0.76, true);
+        drawEyebrow("01 · Capture", 98, 160, alpha);
+        drawProductLayout(clip, time, alpha, { sceneProgress: p });
+
+        const captionP = easeOut(progress(time, 2, 2.75));
+        ctx.save();
+        ctx.globalAlpha = alpha * captionP;
+        // Keep the lower-third outside the navigator card so the final
+        // questions remain visible throughout the capture montage.
+        fillRound(110, 948, 460, 106, 30, COLORS.white);
+        ctx.fillStyle = COLORS.ink;
+        ctx.font = "650 40px 'Aptos Display', 'Segoe UI Variable', sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("Ask naturally.", 142, 1000);
+        ctx.fillStyle = COLORS.muted;
+        ctx.font = "500 18px 'Aptos', 'Segoe UI Variable', sans-serif";
+        ctx.fillText("Questions are indexed as you chat.", 142, 1035);
+        ctx.restore();
+
+        const number = time < 2.7 ? "02" : time < 4.9 ? "04" : "06";
+        drawPill(`${number} questions indexed`, 1422, 94, COLORS.sky, COLORS.ink, alpha);
+      }
+
+      function drawCategoriesScene(time) {
+        drawBackground(time, COLORS.lavender);
+        const alpha = sceneOpacity(time, 7.5, 15.5);
+        const clip = getActiveClip(time);
+        const p = progress(time, 7.5, 15.5);
+        drawMark(96, 76, 0.76, true);
+        drawEyebrow("02 · Organize", 98, 160, alpha);
+        drawProductLayout(clip, time, alpha, { sceneProgress: p });
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        fillRound(110, 948, 1020, 106, 30, COLORS.white);
+        ctx.fillStyle = COLORS.ink;
+        ctx.font = "650 36px 'Aptos Display', 'Segoe UI Variable', sans-serif";
+        ctx.fillText("Every question finds its place.", 146, 1013);
+        ctx.restore();
+
+        let x = 700;
+        [
+          ["Code", COLORS.sky],
+          ["Solutions", COLORS.lavender],
+          ["Research", COLORS.mintSoft]
+        ].forEach(([label, fill], index) => {
+          const reveal = easeOut(progress(time, 8.35 + index * 0.28, 9.1 + index * 0.28));
+          x += drawPill(label, x, 977, fill, COLORS.ink, alpha * reveal) + 12;
+        });
+        drawCursorRipple(486, 336, (time * 0.72) % 1, COLORS.mint);
+      }
+
+      function drawLabelsScene(time) {
+        drawBackground(time, COLORS.peach);
+        const alpha = sceneOpacity(time, 15.5, 22.5);
+        const clip = getActiveClip(time);
+        const p = progress(time, 15.5, 22.5);
+        drawMark(96, 76, 0.76, true);
+        drawEyebrow("03 · Curate", 98, 160, alpha);
+        drawProductLayout(clip, time, alpha, { sceneProgress: p });
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        fillRound(110, 948, 596, 106, 30, COLORS.white);
+        ctx.fillStyle = COLORS.ink;
+        ctx.font = "650 40px 'Aptos Display', 'Segoe UI Variable', sans-serif";
+        ctx.fillText("Save. Label. Refine.", 142, 1000);
+        ctx.fillStyle = COLORS.muted;
+        ctx.font = "500 18px 'Aptos', 'Segoe UI Variable', sans-serif";
+        ctx.fillText("Keep the questions that matter close.", 142, 1035);
+        ctx.restore();
+
+        const rippleTime = time < 19 ? progress(time, 16.4, 17.25) : progress(time, 19.8, 20.65);
+        drawCursorRipple(508, 428, rippleTime, "#e58a45");
+      }
+
+      function drawJumpScene(time) {
+        drawBackground(time, COLORS.mintSoft);
+        const alpha = sceneOpacity(time, 22.5, 31.5);
+        const clip = getActiveClip(time);
+        const p = progress(time, 22.5, 31.5);
+        drawMark(96, 76, 0.76, true);
+        drawEyebrow("04 · Return", 98, 160, alpha);
+        drawProductLayout(clip, time, alpha, { sceneProgress: p });
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        fillRound(110, 948, 650, 106, 30, COLORS.white);
+        ctx.fillStyle = COLORS.ink;
+        ctx.font = "650 40px 'Aptos Display', 'Segoe UI Variable', sans-serif";
+        ctx.fillText("Jump back instantly.", 142, 1000);
+        ctx.fillStyle = COLORS.muted;
+        ctx.font = "500 18px 'Aptos', 'Segoe UI Variable', sans-serif";
+        ctx.fillText("From the index to the original answer.", 142, 1035);
+        ctx.restore();
+
+        const pulse = (time * 0.9) % 1;
+        drawCursorRipple(548, 470, pulse, COLORS.mint);
+        ctx.save();
+        ctx.globalAlpha = alpha * (0.45 + 0.3 * Math.sin(time * 4));
+        ctx.strokeStyle = COLORS.mint;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(518, 560);
+        ctx.bezierCurveTo(590, 500, 620, 500, 700, 518);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawEndCard(time) {
+        drawBackground(time, COLORS.lavender);
+        const p = easeOut(progress(time, 31.5, 32.6));
+        const alpha = p * (1 - easeInOut(progress(time, 36.65, 37)) * 0.08);
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        fillRound(1110, 86, 630, 266, 112, COLORS.mintSoft);
+        fillRound(1380, 318, 360, 220, 92, COLORS.sky);
+        fillRound(1020, 542, 720, 352, 130, COLORS.peach);
+        fillRound(1260, 850, 480, 118, 54, COLORS.lavender);
+        ctx.restore();
+
+        drawMark(120, 108, 1.04, true);
+        drawEyebrow("Question Navigator for ChatGPT", 126, 290, alpha);
+        drawHeadline(["Find the question.", "Return to the answer."], 118, 340, 94, alpha, 980);
+        drawBody("A local-first working index for long conversations.", 126, 570, 32, alpha);
+
+        let x = 126;
+        [
+          ["Local-first", COLORS.mintSoft],
+          ["Open source", COLORS.sky],
+          ["Chrome & Edge", COLORS.lavender]
+        ].forEach(([label, fill], index) => {
+          const reveal = easeOut(progress(time, 32.45 + index * 0.2, 33.25 + index * 0.2));
+          x += drawPill(label, x, 662, fill, COLORS.ink, alpha * reveal) + 14;
+        });
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        fillRound(126, 782, 840, 92, 30, "rgba(255,255,255,0.88)");
+        ctx.fillStyle = COLORS.ink;
+        ctx.font = "600 29px 'Aptos', 'Segoe UI Variable', sans-serif";
+        ctx.textAlign = "left";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "900 34px 'Segoe UI', 'Microsoft YaHei', sans-serif";
-        ctx.fillText(english, 960, 930);
-        ctx.fillStyle = "rgba(214, 251, 239, 0.95)";
-        ctx.font = "800 24px 'Microsoft YaHei', sans-serif";
-        ctx.fillText(chinese, 960, 968);
+        ctx.fillText("github.com/172917/ChatGPT-Question-Navigator", 166, 829);
         ctx.restore();
       }
 
-      function drawImageCover(image, x, y, width, height, radius = 22) {
-        const scale = Math.max(width / image.width, height / image.height);
-        const sw = width / scale;
-        const sh = height / scale;
-        const sx = (image.width - sw) / 2;
-        const sy = (image.height - sh) / 2;
+      function drawTransition(time, boundary, fromColor, toColor) {
+        const p = progress(time, boundary - 0.24, boundary + 0.26);
+        if (p <= 0 || p >= 1) return;
+        const sweep = p < 0.5 ? easeInOut(p * 2) : 1 - easeInOut((p - 0.5) * 2);
+        const width = WIDTH * sweep;
+        const x = p < 0.5 ? 0 : WIDTH - width;
+        const gradient = ctx.createLinearGradient(x, 0, x + Math.max(width, 1), 0);
+        gradient.addColorStop(0, fromColor);
+        gradient.addColorStop(1, toColor);
         ctx.save();
-        drawRoundedRect(x, y, width, height, radius);
-        ctx.clip();
-        ctx.drawImage(image, sx, sy, sw, sh, x, y, width, height);
-        ctx.restore();
-      }
-
-      function drawImageContain(image, x, y, width, height, radius = 22) {
-        const scale = Math.min(width / image.width, height / image.height);
-        const dw = image.width * scale;
-        const dh = image.height * scale;
-        const dx = x + (width - dw) / 2;
-        const dy = y + (height - dh) / 2;
-        ctx.save();
-        drawRoundedRect(dx, dy, dw, dh, radius);
-        ctx.clip();
-        ctx.drawImage(image, dx, dy, dw, dh);
+        ctx.globalAlpha = 0.92;
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, 0, width, HEIGHT);
         ctx.restore();
       }
 
       function drawScene(time) {
-        drawBackground(time);
-        drawBrand(108, 80, 0.9);
+        if (time < 2) drawOpening(time);
+        else if (time < 7.5) drawAskScene(time);
+        else if (time < 15.5) drawCategoriesScene(time);
+        else if (time < 22.5) drawLabelsScene(time);
+        else if (time < 31.5) drawJumpScene(time);
+        else drawEndCard(time);
 
-        if (time < 4) {
-          const p = sceneProgress(time, 0, 4);
-          drawBilingualHeadline(
-            "Long chats get messy.\nFinding questions takes time.",
-            "长对话越聊越长，回头找问题很费时间。",
-            "For research, study, coding, and planning, every scroll back costs attention.",
-            120,
-            236,
-            p
-          );
-          drawBrowserShell(1080, 178, 620, 690, easeOutCubic(p));
-          drawChatStack(1138, 320, 500, 8, p);
-          drawBilingualCaption(
-            "Long conversations need a better way back.",
-            "长对话需要一个更稳定的回看入口。",
-            sceneProgress(time, 0.2, 1.2)
-          );
-          return;
-        }
-
-        if (time < 9) {
-          const p = sceneProgress(time, 4, 9);
-          drawBilingualHeadline(
-            "Every question\nfinds its place.",
-            "每个问题自动变成可整理的本地索引。",
-            "Code, solutions, research, to-dos, and everything else — organized on your device.",
-            120,
-            236,
-            p
-          );
-          drawBrowserShell(1050, 150, 680, 730, 1);
-          drawChatStack(1100, 300, 540, 6, 1);
-          drawNavCard(1320, 245, 1.08, 0.88 + 0.12 * easeOutCubic(p));
-          drawBilingualCaption(
-            "Questions become a local working index.",
-            "问题自动分类，聊天内容不离开本机。",
-            sceneProgress(time, 4.2, 5.2)
-          );
-          return;
-        }
-
-        if (time < 15) {
-          const p = sceneProgress(time, 9, 15);
-          drawImageCover(images.screenshot, 120, 150, 1680, 760, 28);
-          ctx.save();
-          ctx.globalAlpha = 0.72;
-          ctx.fillStyle = "rgba(255,255,255,0.72)";
-          ctx.fillRect(0, 0, WIDTH, HEIGHT);
-          ctx.restore();
-          drawImageCover(images.screenshot, 134, 170, 700, 740, 26);
-          strokeRoundedRect(134, 170, 700, 740, 26, "rgba(16,163,127,0.5)", 5);
-          drawNavCard(1030, 242, 1.16, 0.9 + 0.1 * easeOutCubic(p));
-          const pulse = Math.sin(time * 8) * 0.5 + 0.5;
-          ctx.save();
-          ctx.globalAlpha = 0.7;
-          ctx.strokeStyle = "#10a37f";
-          ctx.lineWidth = 6 + pulse * 4;
-          ctx.beginPath();
-          ctx.moveTo(820, 468);
-          ctx.bezierCurveTo(920, 420, 950, 420, 1030, 430);
-          ctx.stroke();
-          ctx.restore();
-          fillRoundedRect(928 + pulse * 8, 396 + pulse * 3, 52, 52, 26, "#111827");
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "900 34px 'Microsoft YaHei', sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText("↗", 954 + pulse * 8, 422 + pulse * 3);
-          drawBilingualCaption(
-            "Organize, search, favorite, and jump back.",
-            "自动分类、搜索、收藏，再一键跳回原问题。",
-            sceneProgress(time, 9.2, 10.4)
-          );
-          return;
-        }
-
-        const p = sceneProgress(time, 15, 20);
-        drawImageContain(images.poster, 1040, 100, 650, 812, 26);
-        drawBilingualHeadline(
-          "Question Navigator\nfor ChatGPT",
-          "把长对话变成可回溯的工作索引。",
-          "Local-first, bilingual, open-source, and built for Chrome / Edge.",
-          120,
-          238,
-          p
-        );
-        const tags = ["Local-first", "中文 / English", "Chrome / Edge"];
-        tags.forEach((tag, index) => {
-          const tagP = easeOutCubic(p * 1.4 - index * 0.18);
-          ctx.save();
-          ctx.globalAlpha = tagP;
-          const tagWidth = index === 1 ? 300 : 236;
-          const tagX = [126, 406, 780][index];
-          const y = 620;
-          fillRoundedRect(tagX, y, tagWidth, 74, 20, index === 1 ? "#111827" : "rgba(255,255,255,0.86)");
-          strokeRoundedRect(tagX, y, tagWidth, 74, 20, "rgba(16,163,127,0.22)", 2);
-          ctx.fillStyle = index === 1 ? "#ffffff" : "#08745d";
-          ctx.font = "900 25px 'Microsoft YaHei', sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(tag, tagX + tagWidth / 2, y + 38);
-          ctx.restore();
-        });
-        drawBilingualCaption(
-          "Auto categories / Search / Favorites / Bilingual",
-          "自动分类 / 搜索 / 收藏 / 中英切换",
-          sceneProgress(time, 15.2, 16.2)
-        );
+        [
+          [2, COLORS.mintSoft, COLORS.sky],
+          [7.5, COLORS.sky, COLORS.lavender],
+          [15.5, COLORS.lavender, COLORS.peach],
+          [22.5, COLORS.peach, COLORS.mintSoft],
+          [31.5, COLORS.mintSoft, COLORS.lavender]
+        ].forEach(([boundary, from, to]) => drawTransition(time, boundary, from, to));
       }
 
       function renderAt(time) {
-        drawScene(clamp(time, 0, DURATION));
+        const safeTime = clamp(time, 0, DURATION);
+        canvas.dataset.time = String(safeTime);
+        drawScene(safeTime);
       }
 
-      function stopPlayback() {
-        isPlaying = false;
-        cancelAnimationFrame(rafId);
-        stopAudio();
-        playButton.textContent = "播放预览";
-      }
-
-      function startPlayback(reset = false) {
-        if (reset || !startTime) {
-          startTime = performance.now();
-        } else {
-          const currentTime = Number(canvas.dataset.time || 0);
-          startTime = performance.now() - currentTime * 1000;
-        }
-        isPlaying = true;
-        playButton.textContent = "暂停";
-        startAudio(false).catch((error) => {
-          console.warn("[CQN Promo] Preview music failed.", error);
+      function waitForEvent(target, eventName, timeout = 12000) {
+        return new Promise((resolve, reject) => {
+          const timer = window.setTimeout(() => reject(new Error(`${eventName} timed out`)), timeout);
+          target.addEventListener(eventName, () => {
+            window.clearTimeout(timer);
+            resolve();
+          }, { once: true });
         });
+      }
+
+      async function seekVideo(video, time, timeout = 12000) {
+        if (Math.abs(video.currentTime - time) <= 0.05 && !video.seeking && video.readyState >= 2) return;
+        const seeked = waitForEvent(video, "seeked", timeout);
+        video.currentTime = time;
+        await seeked;
+      }
+
+      async function loadClip(clip) {
+        const video = document.createElement("video");
+        video.preload = "auto";
+        video.muted = true;
+        video.playsInline = true;
+        video.crossOrigin = "anonymous";
+        video.src = clip.source;
+        clip.video = video;
+        await waitForEvent(video, "loadeddata", 20000);
+        await seekVideo(video, clip.sourceStart);
+        video.playbackRate = clip.rate;
+      }
+
+      async function resetClips() {
+        clearClipTimers();
+        await Promise.all(clipSpecs.map(async (clip) => {
+          clip.video.pause();
+          await seekVideo(clip.video, clip.sourceStart, 8000);
+          clip.video.playbackRate = clip.rate;
+        }));
+      }
+
+      function clearClipTimers() {
+        clipTimers.forEach((timer) => window.clearTimeout(timer));
+        clipTimers = [];
+        clipSpecs.forEach((clip) => clip.video?.pause());
+      }
+
+      function scheduleClipPlayback(offsetSeconds = 0) {
+        clearClipTimers();
+        clipSpecs.forEach((clip) => {
+          if (clip.outputEnd <= offsetSeconds) return;
+          const startDelay = Math.max(0, clip.outputStart - offsetSeconds);
+          const sourceOffset = Math.max(0, offsetSeconds - clip.outputStart) * clip.rate;
+          if (sourceOffset > 0) clip.video.currentTime = clip.sourceStart + sourceOffset;
+          const startTimer = window.setTimeout(() => {
+            clip.video.playbackRate = clip.rate;
+            clip.video.play().catch(() => undefined);
+          }, startDelay * 1000);
+          const endTimer = window.setTimeout(() => clip.video.pause(), Math.max(0, clip.outputEnd - offsetSeconds) * 1000);
+          clipTimers.push(startTimer, endTimer);
+        });
+      }
+
+      function stopAudio() {
+        audioNodes.forEach((node) => {
+          try { node.stop?.(); } catch { /* already stopped */ }
+          try { node.disconnect?.(); } catch { /* already disconnected */ }
+        });
+        audioNodes = [];
+      }
+
+      function scheduleOriginalSoundtrack(context, destination) {
+        stopAudio();
+        const now = context.currentTime + 0.06;
+        const master = context.createGain();
+        const compressor = context.createDynamicsCompressor();
+        const lowpass = context.createBiquadFilter();
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.exponentialRampToValueAtTime(0.26, now + 0.8);
+        master.gain.setValueAtTime(0.26, now + DURATION - 1.2);
+        master.gain.exponentialRampToValueAtTime(0.0001, now + DURATION);
+        lowpass.type = "lowpass";
+        lowpass.frequency.value = 6200;
+        lowpass.Q.value = 0.55;
+        compressor.threshold.value = -18;
+        compressor.knee.value = 20;
+        compressor.ratio.value = 3.5;
+        compressor.attack.value = 0.012;
+        compressor.release.value = 0.24;
+        master.connect(lowpass).connect(compressor).connect(destination);
+        audioNodes.push(master, lowpass, compressor);
+
+        function envelope(gain, start, attack, hold, release, level) {
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.exponentialRampToValueAtTime(level, start + attack);
+          gain.gain.setValueAtTime(level * 0.78, start + attack + hold);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + attack + hold + release);
+        }
+
+        function tone(frequency, start, duration, type, level, target = master, detune = 0) {
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.type = type;
+          oscillator.frequency.value = frequency;
+          oscillator.detune.value = detune;
+          envelope(gain, start, 0.05, Math.max(0.02, duration * 0.58), duration * 0.34, level);
+          oscillator.connect(gain).connect(target);
+          oscillator.start(start);
+          oscillator.stop(start + duration + 0.08);
+          audioNodes.push(oscillator, gain);
+        }
+
+        function air(start, duration, level) {
+          const frameCount = Math.max(1, Math.floor(context.sampleRate * duration));
+          const buffer = context.createBuffer(1, frameCount, context.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let index = 0; index < frameCount; index += 1) {
+            data[index] = (Math.random() * 2 - 1) * Math.pow(1 - index / frameCount, 1.6);
+          }
+          const source = context.createBufferSource();
+          const gain = context.createGain();
+          const bandpass = context.createBiquadFilter();
+          bandpass.type = "bandpass";
+          bandpass.frequency.value = 4200;
+          bandpass.Q.value = 0.7;
+          gain.gain.setValueAtTime(level, start);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+          source.buffer = buffer;
+          source.connect(bandpass).connect(gain).connect(master);
+          source.start(start);
+          source.stop(start + duration);
+          audioNodes.push(source, gain, bandpass);
+        }
+
+        const beat = 60 / 96;
+        const bar = beat * 4;
+        const chords = [
+          [220.00, 277.18, 329.63, 415.30],
+          [174.61, 220.00, 261.63, 329.63],
+          [196.00, 246.94, 293.66, 369.99],
+          [146.83, 220.00, 261.63, 329.63]
+        ];
+        const bass = [55.00, 43.65, 49.00, 36.71];
+        const pluck = [659.25, 554.37, 493.88, 554.37, 739.99, 659.25, 554.37, 493.88];
+
+        for (let index = 0; index < 16; index += 1) {
+          const start = now + index * bar;
+          const padBus = context.createGain();
+          const padFilter = context.createBiquadFilter();
+          padBus.gain.value = 0.62;
+          padFilter.type = "lowpass";
+          padFilter.frequency.value = 1250;
+          padFilter.Q.value = 0.45;
+          padBus.connect(padFilter).connect(master);
+          audioNodes.push(padBus, padFilter);
+          chords[index % chords.length].forEach((frequency, voice) => {
+            tone(frequency, start, bar * 0.97, "sine", 0.035, padBus, voice % 2 ? 5 : -5);
+            tone(frequency * 2, start + 0.02, bar * 0.91, "triangle", 0.011, padBus, voice % 2 ? -7 : 7);
+          });
+          tone(bass[index % bass.length], start, bar * 0.78, "sine", 0.13);
+        }
+
+        for (let step = 0; step < 64; step += 1) {
+          const start = now + step * beat;
+          const frequency = pluck[step % pluck.length] * (step % 16 >= 12 ? 0.5 : 1);
+          tone(frequency, start + 0.04, beat * 0.46, "triangle", step % 4 === 0 ? 0.048 : 0.032);
+          if (step % 2 === 0) tone(72, start, beat * 0.24, "sine", 0.12);
+          if (step % 4 === 2) air(start + beat * 0.5, 0.045, 0.018);
+        }
+
+        [2, 7.5, 15.5, 22.5, 31.5].forEach((second, index) => {
+          const start = now + second - 0.16;
+          air(start, 0.46, 0.055);
+          tone(index % 2 ? 783.99 : 659.25, start + 0.12, 0.42, "sine", 0.055);
+        });
+      }
+
+      async function loadMusic() {
+        const response = await fetch(SOURCE_MUSIC);
+        if (!response.ok) throw new Error(`Music loading failed (${response.status})`);
+        musicBytes = await response.arrayBuffer();
+      }
+
+      async function scheduleMusic(context, destination, offsetSeconds = 0) {
+        stopAudio();
+        if (!musicBytes) await loadMusic();
+        if (!musicBuffer) musicBuffer = await context.decodeAudioData(musicBytes.slice(0));
+
+        const now = context.currentTime + 0.06;
+        const source = context.createBufferSource();
+        const gain = context.createGain();
+        const compressor = context.createDynamicsCompressor();
+        const remaining = Math.max(0.05, DURATION - offsetSeconds);
+        const sourceOffset = musicBuffer.duration
+          ? offsetSeconds % musicBuffer.duration
+          : 0;
+        const fadeInDuration = Math.min(0.8, remaining * 0.25);
+        const fadeOutDuration = Math.min(1.2, remaining * 0.4);
+        const fadeOutStart = Math.max(fadeInDuration, remaining - fadeOutDuration);
+
+        source.buffer = musicBuffer;
+        source.loop = musicBuffer.duration < remaining + sourceOffset;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.24, now + fadeInDuration);
+        gain.gain.setValueAtTime(0.24, now + fadeOutStart);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + remaining);
+        compressor.threshold.value = -16;
+        compressor.knee.value = 18;
+        compressor.ratio.value = 3;
+        compressor.attack.value = 0.01;
+        compressor.release.value = 0.25;
+
+        source.connect(gain).connect(compressor).connect(destination);
+        source.start(now, sourceOffset);
+        source.stop(now + remaining + 0.05);
+        audioNodes.push(source, gain, compressor);
+      }
+
+      async function startAudio(destination = null, offsetSeconds = 0) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        if (!audioContext || audioContext.state === "closed") audioContext = new AudioContextClass();
+        if (audioContext.state !== "running") await audioContext.resume();
+        await scheduleMusic(audioContext, destination || audioContext.destination, offsetSeconds);
+        return audioContext;
+      }
+
+      async function startPreview(reset = false) {
+        if (playing) return;
+        const offset = reset ? 0 : Number(canvas.dataset.time || 0);
+        if (offset >= DURATION) return startPreview(true);
+        await resetClips();
+        playing = true;
+        playbackStartedAt = performance.now() - offset * 1000;
+        playButton.textContent = "Pause";
+        scheduleClipPlayback(offset);
+        startAudio(null, offset).catch(() => undefined);
+
         const loop = () => {
-          const time = (performance.now() - startTime) / 1000;
-          canvas.dataset.time = String(time);
+          const time = (performance.now() - playbackStartedAt) / 1000;
           renderAt(time);
           if (time >= DURATION) {
-            stopPlayback();
+            stopPreview();
             renderAt(DURATION);
             return;
           }
-          rafId = requestAnimationFrame(loop);
+          animationFrame = requestAnimationFrame(loop);
         };
         loop();
       }
 
-      function stopAudio() {
-        activeAudioElements.forEach((audio) => {
-          try {
-            audio.pause();
-            audio.src = "";
-            audio.load();
-          } catch {
-            // Already stopped.
-          }
-        });
-        activeAudioElements = [];
-
-        activeAudioNodes.forEach((node) => {
-          try {
-            node.stop?.();
-            node.disconnect?.();
-          } catch {
-            // Already stopped.
-          }
-        });
-        activeAudioNodes = [];
-      }
-
-      function scheduleMusic(context, output, offset = 0) {
-        const now = context.currentTime + offset;
-        const master = context.createGain();
-        const compressor = context.createDynamicsCompressor();
-        const filter = context.createBiquadFilter();
-        master.gain.setValueAtTime(0.0001, now);
-        master.gain.exponentialRampToValueAtTime(0.22, now + 1.2);
-        master.gain.setValueAtTime(0.22, now + DURATION - 1.4);
-        master.gain.exponentialRampToValueAtTime(0.0001, now + DURATION);
-        filter.type = "lowpass";
-        filter.frequency.value = 6800;
-        filter.Q.value = 0.6;
-        compressor.threshold.value = -20;
-        compressor.knee.value = 18;
-        compressor.ratio.value = 4;
-        compressor.attack.value = 0.012;
-        compressor.release.value = 0.18;
-        master.connect(filter).connect(compressor).connect(output);
-        activeAudioNodes.push(master, filter, compressor);
-
-        function envelope(gain, start, peak, hold, release, level) {
-          gain.gain.setValueAtTime(0.0001, start);
-          gain.gain.exponentialRampToValueAtTime(level, start + peak);
-          gain.gain.setValueAtTime(level * 0.82, start + peak + hold);
-          gain.gain.exponentialRampToValueAtTime(0.0001, start + peak + hold + release);
-        }
-
-        function addTone(freq, start, duration, type, level, destination = master, detune = 0) {
-          const osc = context.createOscillator();
-          const gain = context.createGain();
-          osc.type = type;
-          osc.frequency.setValueAtTime(freq, start);
-          osc.detune.value = detune;
-          envelope(gain, start, 0.035, Math.max(0.02, duration * 0.58), duration * 0.36, level);
-          osc.connect(gain).connect(destination);
-          osc.start(start);
-          osc.stop(start + duration + 0.08);
-          activeAudioNodes.push(osc, gain);
-        }
-
-        function addNoise(start, duration, level, destination = master) {
-          const length = Math.max(1, Math.floor(context.sampleRate * duration));
-          const buffer = context.createBuffer(1, length, context.sampleRate);
-          const data = buffer.getChannelData(0);
-          for (let i = 0; i < length; i += 1) {
-            data[i] = (Math.random() * 2 - 1) * (1 - i / length);
-          }
-          const source = context.createBufferSource();
-          const gain = context.createGain();
-          const highpass = context.createBiquadFilter();
-          highpass.type = "highpass";
-          highpass.frequency.value = 4800;
-          gain.gain.setValueAtTime(level, start);
-          gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-          source.buffer = buffer;
-          source.connect(highpass).connect(gain).connect(destination);
-          source.start(start);
-          source.stop(start + duration);
-          activeAudioNodes.push(source, gain, highpass);
-        }
-
-        const beat = 0.5;
-        const chords = [
-          [261.63, 329.63, 392.0, 493.88],
-          [220.0, 261.63, 329.63, 392.0],
-          [174.61, 220.0, 261.63, 329.63],
-          [196.0, 246.94, 293.66, 392.0]
-        ];
-        const melody = [659.25, 587.33, 523.25, 587.33, 659.25, 783.99, 739.99, 659.25];
-        const bassRoots = [65.41, 55.0, 43.65, 49.0];
-
-        for (let bar = 0; bar < 10; bar += 1) {
-          const chord = chords[bar % chords.length];
-          const barStart = now + bar * 2;
-          const padGain = context.createGain();
-          const padFilter = context.createBiquadFilter();
-          padGain.gain.value = 0.44;
-          padFilter.type = "lowpass";
-          padFilter.frequency.value = 1500;
-          padFilter.Q.value = 0.8;
-          padGain.connect(padFilter).connect(master);
-          activeAudioNodes.push(padGain, padFilter);
-
-          chord.forEach((freq, index) => {
-            addTone(freq, barStart, 1.95, "sine", 0.045, padGain, index % 2 ? 5 : -5);
-            addTone(freq * 2, barStart + 0.01, 1.88, "triangle", 0.018, padGain, index % 2 ? -7 : 7);
-          });
-
-          addTone(bassRoots[bar % bassRoots.length], barStart, 1.7, "sine", 0.16);
-          addTone(bassRoots[bar % bassRoots.length] * 2, barStart + 1.0, 0.7, "triangle", 0.08);
-        }
-
-        for (let step = 0; step < 40; step += 1) {
-          const start = now + step * beat;
-          const freq = melody[step % melody.length] * (step % 16 > 11 ? 0.5 : 1);
-          addTone(freq, start + 0.04, 0.28, "triangle", step % 4 === 0 ? 0.06 : 0.045);
-          if (step % 2 === 1) {
-            addTone(freq * 1.5, start + 0.18, 0.18, "sine", 0.025);
-          }
-        }
-
-        for (let step = 0; step < 40; step += 1) {
-          const start = now + step * beat;
-          if (step % 2 === 0) {
-            addTone(58, start, 0.2, "sine", 0.24);
-            addTone(116, start, 0.08, "triangle", 0.08);
-          }
-          addNoise(start + 0.25, 0.045, step % 4 === 3 ? 0.045 : 0.026);
-        }
-      }
-
-      async function startAudio(forExport, destination, preferMp3 = true) {
+      function stopPreview() {
+        playing = false;
+        cancelAnimationFrame(animationFrame);
+        clearClipTimers();
         stopAudio();
-        if (preferMp3 && musicMetadataLoaded && !destination) {
-          try {
-            const audio = new Audio(musicUrl);
-            audio.preload = "auto";
-            audio.volume = 0.82;
-            await new Promise((resolve, reject) => {
-              audio.onloadedmetadata = resolve;
-              audio.onerror = () => reject(new Error("MP3 failed to load."));
-            });
-            audio.currentTime = MUSIC_START_SECONDS;
-            await new Promise((resolve) => {
-              const seekTimer = window.setTimeout(resolve, 800);
-              audio.onseeked = () => {
-                window.clearTimeout(seekTimer);
-                resolve();
-              };
-            });
-            await audio.play();
-            activeAudioElements.push(audio);
-            window.setTimeout(() => {
-              if (activeAudioElements.includes(audio)) {
-                audio.pause();
-              }
-            }, DURATION * 1000);
-            return null;
-          } catch (error) {
-            console.warn("[CQN Promo] Direct MP3 preview failed, fallback to generated music.", error);
-            stopAudio();
-          }
-        }
-
-        const Context = window.AudioContext || window.webkitAudioContext;
-        if (!Context) {
-          return null;
-        }
-        if (!audioCtx || audioCtx.state === "closed") {
-          audioCtx = new Context();
-        }
-        if (audioCtx.state !== "running") {
-          await Promise.race([
-            audioCtx.resume().catch(() => undefined),
-            new Promise((resolve) => window.setTimeout(resolve, 900))
-          ]);
-        }
-
-        if (preferMp3 && musicMetadataLoaded) {
-          try {
-            const audio = new Audio(musicUrl);
-            audio.preload = "auto";
-            audio.volume = forExport ? 0.72 : 0.82;
-            await new Promise((resolve, reject) => {
-              audio.onloadedmetadata = resolve;
-              audio.onerror = () => reject(new Error("MP3 failed to load."));
-            });
-            audio.currentTime = MUSIC_START_SECONDS;
-
-            if (destination) {
-              const source = audioCtx.createMediaElementSource(audio);
-              const gain = audioCtx.createGain();
-              gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-              gain.gain.exponentialRampToValueAtTime(0.9, audioCtx.currentTime + 0.8);
-              gain.gain.setValueAtTime(0.9, audioCtx.currentTime + DURATION - 1.4);
-              gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + DURATION);
-              source.connect(gain);
-              gain.connect(destination);
-              activeAudioNodes.push(source, gain);
-            }
-
-            await new Promise((resolve, reject) => {
-              const seekTimer = window.setTimeout(resolve, 800);
-              audio.onseeked = () => {
-                window.clearTimeout(seekTimer);
-                resolve();
-              };
-              audio.onerror = () => reject(new Error("MP3 failed to load."));
-            });
-
-            await audio.play();
-            activeAudioElements.push(audio);
-            window.setTimeout(() => {
-              if (activeAudioElements.includes(audio)) {
-                audio.pause();
-              }
-            }, DURATION * 1000);
-            return audioCtx;
-          } catch (error) {
-            console.warn("[CQN Promo] MP3 music failed, fallback to generated music.", error);
-            stopAudio();
-          }
-        }
-
-        const output = destination || audioCtx.destination;
-        scheduleMusic(audioCtx, output, forExport ? 0.05 : 0);
-        return audioCtx;
+        playButton.textContent = "Play preview";
       }
 
-      async function addMusicTrackToRecording(stream) {
-        if (!musicMetadataLoaded) {
-          return false;
-        }
-
-        try {
-          const audio = new Audio(musicUrl);
-          audio.preload = "auto";
-          audio.volume = 0.82;
-          await new Promise((resolve, reject) => {
-            audio.onloadedmetadata = resolve;
-            audio.onerror = () => reject(new Error("MP3 failed to load."));
-          });
-          audio.currentTime = MUSIC_START_SECONDS;
-          await new Promise((resolve) => {
-            const seekTimer = window.setTimeout(resolve, 800);
-            audio.onseeked = () => {
-              window.clearTimeout(seekTimer);
-              resolve();
-            };
-          });
-
-          const audioStream = audio.captureStream?.() || audio.mozCaptureStream?.();
-          if (!audioStream) {
-            throw new Error("Audio captureStream is not supported.");
-          }
-
-          audioStream.getAudioTracks().forEach((track) => stream.addTrack(track));
-          await audio.play();
-          activeAudioElements.push(audio);
-          window.setTimeout(() => {
-            if (activeAudioElements.includes(audio)) {
-              audio.pause();
-            }
-          }, DURATION * 1000);
-          return true;
-        } catch (error) {
-          console.warn("[CQN Promo] MP3 capture failed, fallback to generated music.", error);
-          stopAudio();
-          return false;
-        }
+      function recordingMimeType() {
+        return [
+          'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+          'video/mp4;codecs="avc1.42E01E"',
+          "video/mp4"
+        ].find((type) => MediaRecorder.isTypeSupported(type)) || "";
       }
 
-      function getRecordingType(format) {
-        if (format === "mp4") {
-          const candidates = [
-            'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
-            'video/mp4;codecs="avc1.42E01E"',
-            "video/mp4"
-          ];
-          return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
-        }
-
-        return MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
-          ? "video/webm;codecs=vp9,opus"
-          : "video/webm";
-      }
-
-      async function exportVideo(format = "webm") {
-        const activeButton = format === "mp4" ? exportMp4Button : exportButton;
-        activeButton.disabled = true;
+      async function exportVideo() {
         exportButton.disabled = true;
-        exportMp4Button.disabled = true;
-        stopPlayback();
+        playButton.disabled = true;
+        restartButton.disabled = true;
+        stopPreview();
+        await resetClips();
         renderAt(0);
-        const label = format.toUpperCase();
-        statusText.textContent = `正在导出 ${label}，约 20 秒...`;
+        statusText.textContent = `Exporting ${PROFILE} profile — about 37 seconds…`;
 
         const stream = canvas.captureStream(FPS);
-        const hasCapturedMusic = await addMusicTrackToRecording(stream);
-        const Context = window.AudioContext || window.webkitAudioContext;
-        let exportAudio = null;
-        if (!hasCapturedMusic && Context) {
-          if (!audioCtx || audioCtx.state === "closed") {
-            audioCtx = new Context();
-          }
-          exportAudio = audioCtx.createMediaStreamDestination();
-          await startAudio(true, exportAudio, false);
-          exportAudio.stream.getAudioTracks().forEach((track) => stream.addTrack(track));
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          if (!audioContext || audioContext.state === "closed") audioContext = new AudioContextClass();
+          if (audioContext.state !== "running") await audioContext.resume();
+          const destination = audioContext.createMediaStreamDestination();
+          await scheduleMusic(audioContext, destination, 0);
+          destination.stream.getAudioTracks().forEach((track) => stream.addTrack(track));
         }
 
+        const mimeType = recordingMimeType();
+        if (!mimeType) throw new Error("This browser cannot export H.264 MP4.");
         const chunks = [];
-        const mimeType = getRecordingType(format);
-        if (!mimeType) {
-          throw new Error(`当前浏览器不支持直接导出 ${label}。`);
-        }
         const recorder = new MediaRecorder(stream, {
           mimeType,
-          videoBitsPerSecond: 9000000
+          videoBitsPerSecond: VIDEO_BITRATE,
+          audioBitsPerSecond: 160000
         });
-
-        recorder.ondataavailable = (event) => {
-          if (event.data?.size) {
-            chunks.push(event.data);
-          }
-        };
-
-        const done = new Promise((resolve) => {
+        recorder.ondataavailable = (event) => event.data?.size && chunks.push(event.data);
+        const finished = new Promise((resolve, reject) => {
           recorder.onstop = resolve;
+          recorder.onerror = () => reject(recorder.error || new Error("MediaRecorder failed"));
         });
 
-        recorder.start();
-        const exportStart = performance.now();
+        recorder.start(1000);
+        scheduleClipPlayback(0);
+        const exportStartedAt = performance.now();
         await new Promise((resolve) => {
-          const step = () => {
-            const time = (performance.now() - exportStart) / 1000;
+          const frame = () => {
+            const time = (performance.now() - exportStartedAt) / 1000;
             renderAt(time);
             if (time >= DURATION) {
               renderAt(DURATION);
               resolve();
               return;
             }
-            requestAnimationFrame(step);
+            requestAnimationFrame(frame);
           };
-          step();
+          frame();
         });
-        recorder.stop();
-        await done;
 
+        recorder.stop();
+        await finished;
         stream.getTracks().forEach((track) => track.stop());
+        clearClipTimers();
         stopAudio();
 
         const blob = new Blob(chunks, { type: mimeType });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `promo-16x9.${format}`;
+        link.download = OUTPUT_NAME;
         document.body.appendChild(link);
         link.click();
         link.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 1200);
-        statusText.textContent = `导出完成：promo-16x9.${format}，大小约 ${(blob.size / 1024 / 1024).toFixed(1)} MB。`;
+        window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+        statusText.textContent = `Export complete · ${OUTPUT_NAME} · ${(blob.size / 1024 / 1024).toFixed(1)} MB`;
         exportButton.disabled = false;
-        exportMp4Button.disabled = false;
+        playButton.disabled = false;
+        restartButton.disabled = false;
+        return { name: OUTPUT_NAME, size: blob.size };
       }
 
       playButton.addEventListener("click", () => {
-        if (isPlaying) {
-          stopPlayback();
-          return;
-        }
-        startPlayback(false);
+        if (playing) stopPreview();
+        else startPreview(false).catch((error) => { statusText.textContent = error.message; });
       });
 
       restartButton.addEventListener("click", () => {
-        stopPlayback();
+        stopPreview();
         canvas.dataset.time = "0";
-        startPlayback(true);
+        startPreview(true).catch((error) => { statusText.textContent = error.message; });
       });
 
       exportButton.addEventListener("click", () => {
-        exportVideo("webm").catch((error) => {
-          statusText.textContent = `导出失败：${error.message}`;
+        exportVideo().catch((error) => {
+          statusText.textContent = `Export failed: ${error.message}`;
           exportButton.disabled = false;
-          exportMp4Button.disabled = false;
+          playButton.disabled = false;
+          restartButton.disabled = false;
+          clearClipTimers();
           stopAudio();
         });
       });
 
-      exportMp4Button.addEventListener("click", () => {
-        exportVideo("mp4").catch((error) => {
-          statusText.textContent = `导出失败：${error.message}`;
-          exportButton.disabled = false;
-          exportMp4Button.disabled = false;
-          stopAudio();
-        });
-      });
+      window.startHeadlessExport = exportVideo;
+      window.renderPromoFrame = (time) => renderAt(Number(time) || 0);
 
-      Promise.all([
-        loadImage("poster", posterUrl),
-        loadImage("screenshot", screenshotUrl),
-        loadMusicMetadata()
-      ])
-        .then(([, , musicBytes]) => {
-          const musicText = musicBytes
-            ? `音乐已加载，将从 ${MUSIC_START_SECONDS}s 开始。`
-            : "音乐加载失败，将回退到浏览器合成音乐。";
-          const protocolNote = location.protocol === "file:"
-            ? " 当前为 file 页面，导出带音乐的 MP4 时建议通过本地 HTTP 服务打开。"
-            : "";
-          statusText.textContent = `素材已加载。${musicText}${protocolNote} 点击播放预览，或直接导出 WebM / MP4。`;
+      Promise.all([...clipSpecs.map(loadClip), loadMusic()])
+        .then(() => {
+          statusText.textContent = `Assets ready · ${clipSpecs.length} synchronized clips + soundtrack · ${PROFILE} profile`;
           renderAt(0);
         })
         .catch((error) => {
-          statusText.textContent = `素材加载失败：${error.message}`;
+          statusText.textContent = `Source loading failed: ${error.message}`;
         });
     </script>
   </body>
