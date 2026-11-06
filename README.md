@@ -1,6 +1,6 @@
 # ChatGPT Question Navigator / ChatGPT 问题导航
 
-[![Version](https://img.shields.io/badge/version-1.2.1-10a37f)](manifest.json)
+[![Version](https://img.shields.io/badge/version-1.2.2-10a37f)](manifest.json)
 [![Chrome](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)](#安装教程)
 [![Edge](https://img.shields.io/badge/Edge-supported-0AA0F5)](#安装教程)
 [![License](https://img.shields.io/badge/license-GPL--3.0-black)](LICENSE)
@@ -20,6 +20,14 @@ ChatGPT Question Navigator is a local-first Chrome / Edge extension that turns q
 Video: 1920×1080, 30 fps, approximately 17.9 MB. It demonstrates automatic categories, search, favorites, custom labels, batch labeling, language switching, and instant jump-back.
 
 ## 中文
+
+### v1.2.2 更新内容
+
+- 适配新版 ChatGPT 的消息容器，修复面板出现但问题列表为空。
+- 切换对话时只读取当前对话，避免混入网站缓存的旧对话。
+- 标题栏新增“简”按钮：进入精简模式后隐藏搜索、预设分类、自定义标签和批量操作，按提问顺序浏览；点击“全”恢复完整模式。
+- 每个问题下方显示对应 ChatGPT 回复的文本摘要，点击摘要可跳转并高亮原回复。
+- 精简模式偏好保存在扩展本地存储中，刷新页面后继续生效。
 
 ### v1.2.1 更新内容
 
@@ -41,6 +49,8 @@ Video: 1920×1080, 30 fps, approximately 17.9 MB. It demonstrates automatic cate
 - 创建、重命名和删除最多 30 个全局自定义标签。
 - 为单个问题添加多个标签，或者批量处理当前可见结果。
 - 点击问题即可跳回 ChatGPT 原消息，并短暂高亮。
+- 问题下方显示对应回复摘要，可独立点击跳到 ChatGPT 回复。
+- 可一键切换为隐藏分类和标签的精简界面。
 - 支持动态追加新问题及历史消息延迟加载。
 - 面板可拖动、缩放、折叠，并自动记住位置与尺寸。
 - 所有分类和整理逻辑均在本地运行，不调用 OpenAI API。
@@ -153,6 +163,19 @@ git clone https://github.com/172917/ChatGPT-Question-Navigator.git
 - 点击右上角箭头折叠；折叠后点击圆形图标或箭头重新展开。
 - 点击刷新按钮重新扫描当前页面已经加载的问题。
 
+### 11. 精简模式和回复摘要
+
+- 点击标题栏的“简”按钮进入精简模式，点击“全”恢复完整界面。
+- 精简模式只保留标题、提问列表、回复摘要、刷新、折叠及拖动缩放操作，不显示预设分类和自定义标签。
+- 进入精简模式时按提问顺序显示全部已捕获问题；完整模式中的搜索和筛选条件在恢复后继续生效。
+- 点击问题正文跳到你的原消息，点击下方“ChatGPT 回复 ↗”摘要跳到对应回复。
+- 摘要取自网页已加载的回复正文，并随回复生成更新，不调用模型生成摘要。一个问题有多个回复片段时，展示最后一个已加载的回复片段。
+- 长对话中尚未加载或已被网页移出 DOM 的消息，需要先滚动使原消息重新加载，再刷新列表或跳转。
+
+### 更新现有安装
+
+在 `chrome://extensions/` 或 `edge://extensions/` 对问题导航点击“重新加载”，再刷新已经打开的 ChatGPT 页面。使用打包文件时，请先完整解压，并加载其中直接包含 `manifest.json` 的文件夹。
+
 ## 常见问题
 
 ### 面板没有出现
@@ -189,6 +212,13 @@ ChatGPT 的网页结构可能变化。请先重新加载扩展和页面；如果
 不会持久化问题正文、引用片段、搜索词或其他聊天文本。自动分类完全由本地中英文关键词、代码块、文件名和报错信号等确定性规则完成。
 
 ## English
+
+### v1.2.2 compatibility update
+
+- Supports ChatGPT's newer search-unit and user-bubble markup and excludes cached conversations.
+- Adds a Simple/Full button to the panel header. Simple mode hides search, categories, labels, and batch controls while retaining chronological questions and reply previews.
+- Displays an excerpt of the associated loaded ChatGPT reply below each question; click it to jump to the reply. With multiple reply fragments, the last loaded fragment is shown.
+- Remembers simple mode locally. Reload the extension and refresh existing ChatGPT tabs after upgrading.
 
 ### Installation
 
@@ -254,8 +284,11 @@ Important files:
 Run the JavaScript tests:
 
 ```powershell
-node --test .\tests\*.test.cjs
+npm ci
+npm test
 ```
+
+The development-only `jsdom` dependency runs DOM regression tests for modern and legacy ChatGPT markup. It is not shipped with the extension. The synthetic fixture in `tests/fixtures/` contains no real conversation text or IDs.
 
 Validate the exported videos:
 

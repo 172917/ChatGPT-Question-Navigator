@@ -4,6 +4,7 @@
   const HIGHLIGHT_STYLE_ID = "chatgpt-question-navigator-highlight";
   const HIGHLIGHT_CLASS = "chatgpt-question-navigator-target";
   const LAYOUT_STORAGE_KEY = "chatgpt-question-navigator-layout-v1";
+  const COMPACT_STORAGE_KEY = "cqn-compact-mode-v1";
   const LEGACY_ORGANIZER_STORAGE_PREFIX = "cqn-organizer-state-v1";
   const ORGANIZER_STORAGE_PREFIX = "cqn-organizer-state-v2";
   const ORGANIZER_STORAGE_VERSION = 2;
@@ -21,6 +22,9 @@
     assistantMessageRole: "[data-message-author-role='assistant']",
     userTurn: "[data-turn='user']",
     assistantTurn: "[data-turn='assistant']",
+    userUnit: "[data-chatgpt-search-unit-key$=':user'], [data-content-search-unit-key$=':user']",
+    userBubble: "[data-user-message-bubble]",
+    assistantUnit: "[data-chatgpt-search-unit-key$=':assistant'], [data-content-search-unit-key$=':assistant']",
     conversationTurn: "[data-testid^='conversation-turn']",
     turnContainer: "[data-turn], [data-testid^='conversation-turn'], article, [data-message-id]",
     chromeControls: [
@@ -107,6 +111,13 @@
   }
 
   await Promise.all([i18n.initialize(), settings.initialize()]);
+
+  let compactMode = false;
+  try {
+    compactMode = (await chrome.storage.local.get(COMPACT_STORAGE_KEY))?.[COMPACT_STORAGE_KEY] === true;
+  } catch {
+    // Keep the full interface when optional preference storage is unavailable.
+  }
 
   let entries = [];
   let collapsed = false;
@@ -341,6 +352,7 @@
       .navigator.is-collapsed .title,
       .navigator.is-collapsed .body,
       .navigator.is-collapsed .refresh-button,
+      .navigator.is-collapsed .simple-toggle,
       .navigator.is-collapsed .drag-grip,
       .navigator.is-collapsed .resize-handle {
         display: none;
@@ -1171,6 +1183,72 @@
         opacity: 0.95;
       }
 
+      .simple-toggle {
+        border-color: var(--cqn-border);
+        font-size: 11px;
+      }
+
+      .simple-toggle[aria-pressed="true"] {
+        background: var(--cqn-accent-soft);
+        color: var(--cqn-accent);
+      }
+
+      .navigator.is-compact .header {
+        gap: 6px;
+        padding: 11px;
+      }
+
+      .navigator.is-compact .tools > :not(.utility-row),
+      .navigator.is-compact .language-control,
+      .navigator.is-compact .item-actions {
+        display: none;
+      }
+
+      .navigator.is-compact .item-card {
+        grid-template-columns: minmax(0, 1fr);
+        border-left-width: 1px;
+        background: var(--cqn-panel);
+      }
+
+      .reply-summary {
+        grid-column: 1 / -1;
+        display: grid;
+        gap: 4px;
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        border-top: 1px solid var(--cqn-border);
+        padding: 8px 3px 2px;
+        background: transparent;
+        color: var(--cqn-muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 11px;
+        line-height: 1.55;
+        text-align: start;
+      }
+
+      .reply-summary:hover,
+      .reply-summary:focus-visible {
+        color: var(--cqn-text);
+        background: var(--cqn-accent-soft);
+      }
+
+      .reply-heading {
+        color: var(--cqn-accent);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .reply-text {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+      }
+
       @media (prefers-color-scheme: dark) {
         :host {
           --cqn-bg: rgba(31, 31, 31, 0.96);
@@ -1239,6 +1317,7 @@
           <p class="count">${i18n.t("scanning")}</p>
         </div>
         <span class="drag-grip" title="${i18n.t("drag")}" aria-hidden="true"></span>
+        <button class="icon-button simple-toggle" type="button" aria-pressed="false"></button>
         <button class="icon-button refresh-button" type="button" title="${i18n.t("refresh")}" aria-label="${i18n.t("refresh")}">↻</button>
         <button class="icon-button toggle-button" type="button" title="${i18n.t("collapse")}" aria-label="${i18n.t("collapse")}">›</button>
       </header>
@@ -1341,6 +1420,7 @@
   const listElement = shadow.querySelector(".list");
   const toggleButton = shadow.querySelector(".toggle-button");
   const refreshButton = shadow.querySelector(".refresh-button");
+  const simpleToggle = shadow.querySelector(".simple-toggle");
   const dragGrip = shadow.querySelector(".drag-grip");
   const resizeHandle = shadow.querySelector(".resize-handle");
 
@@ -1725,6 +1805,12 @@
   }
 
   function findMessageContainer(element) {
+    // A new turn contains both the question and the answer. Keep the user unit
+    // as the boundary so assistant text and actions cannot enter the question.
+    const userUnit = element.closest(SELECTORS.userUnit);
+    if (userUnit) {
+      return userUnit.closest("[data-chatgpt-search-unit-key$=':user']") || userUnit;
+    }
     return (
       element.closest(SELECTORS.userTurn) ||
       element.closest(SELECTORS.conversationTurn) ||
@@ -2092,7 +2178,7 @@
       return false;
     }
 
-    if (container.matches?.(SELECTORS.userTurn)) {
+    if (container.matches?.([SELECTORS.userTurn, SELECTORS.userMessageRole, SELECTORS.userUnit, SELECTORS.userBubble].join(", "))) {
       return true;
     }
 
@@ -2140,6 +2226,10 @@
   }
 
   function getUserMessageRoots() {
+    const scope = getConversationRoot();
+    if (!scope) {
+      return [];
+    }
     const roots = [];
     const seen = new Set();
 
@@ -2157,11 +2247,11 @@
       roots.push(root);
     };
 
-    document
-      .querySelectorAll(SELECTORS.userMessageRole)
+    scope
+      .querySelectorAll([SELECTORS.userMessageRole, SELECTORS.userUnit, SELECTORS.userBubble].join(", "))
       .forEach((node) => addRoot(node));
 
-    document
+    scope
       .querySelectorAll([SELECTORS.userTurn, SELECTORS.conversationTurn, "article"].join(", "))
       .forEach((container) => {
         if (isUserMessageContainer(container)) {
@@ -2170,6 +2260,25 @@
       });
 
     return roots.sort(sortByDocumentOrder);
+  }
+
+  function getConversationRoot() {
+    const conversationId = getConversationId();
+    if (conversationId) {
+      const root = document.querySelector(
+        `[data-chatgpt-conversation-selection-target="${escapeAttributeValue(conversationId)}"]`
+      );
+      if (root) {
+        return root;
+      }
+    }
+    // ChatGPT keeps previous routes mounted in hidden trees. Never scan those
+    // while the next conversation is still loading.
+    if (document.querySelector("[data-chatgpt-conversation-selection-target]")) {
+      return null;
+    }
+    return Array.from(document.querySelectorAll("[data-app-action-timeline-scroll]"))
+      .find((node) => node.getClientRects().length > 0) || document;
   }
 
   function getTurnDebugId(container) {
@@ -2192,16 +2301,21 @@
   }
 
   function getMessageId(container) {
+    const searchUnit = container.matches?.("[data-chatgpt-search-message-ids]")
+      ? container
+      : container.querySelector("[data-chatgpt-search-message-ids]");
     return (
       container.querySelector("[data-message-id]")?.getAttribute("data-message-id") ||
       container.getAttribute("data-message-id") ||
+      searchUnit?.getAttribute("data-chatgpt-search-message-ids")?.trim().split(/\s+/)[0] ||
+      container.closest("[data-turn-key]")?.getAttribute("data-turn-key") ||
       ""
     );
   }
 
   function parseConversationTurnOrder(...values) {
     for (const value of values) {
-      const match = String(value || "").match(/conversation-turn-(\d+)/i);
+      const match = String(value || "").match(/(?:conversation-turn-|fallback-turn-)(\d+)/i);
       if (match) {
         return Number(match[1]);
       }
@@ -2216,7 +2330,8 @@
       : container.closest?.("[data-testid*='conversation-turn-' i]");
     return parseConversationTurnOrder(
       container.getAttribute("data-testid"),
-      turnContainer?.getAttribute("data-testid")
+      turnContainer?.getAttribute("data-testid"),
+      container.closest("[data-content-search-turn-key]")?.getAttribute("data-content-search-turn-key")
     );
   }
 
@@ -2241,8 +2356,35 @@
     });
   }
 
+  function scanAssistantMessages() {
+    const scope = getConversationRoot();
+    if (!scope) {
+      return [];
+    }
+    const roots = new Set();
+    scope.querySelectorAll([
+      SELECTORS.assistantMessageRole, SELECTORS.assistantTurn, SELECTORS.assistantUnit,
+      "[data-markdown-text-style='assistant-message']"
+    ].join(", ")).forEach((node) => {
+      const unit = node.closest(SELECTORS.assistantUnit);
+      roots.add(
+        unit?.closest("[data-chatgpt-search-unit-key$=':assistant']") || unit ||
+        node.closest(SELECTORS.assistantMessageRole) || node.closest(SELECTORS.assistantTurn) || node
+      );
+    });
+    return Array.from(roots).sort(sortByDocumentOrder).map((element) => {
+      const clone = element.cloneNode(true);
+      removeChromeNodes(clone);
+      clone.querySelectorAll("script, style").forEach((node) => node.remove());
+      const text = stripAuthorLabel(extractStructuredText(clone));
+      return { element, text, summary: labelText(text.slice(0, 500)) };
+    }).filter((reply) => reply.text);
+  }
+
   function scanUserMessages() {
-    return getUserMessageRoots()
+    const roots = getUserMessageRoots();
+    const replies = scanAssistantMessages();
+    return roots
       .map((container, index) => {
         try {
           const parts = extractMessageText(container, index);
@@ -2271,6 +2413,10 @@
             label: parts.displayText,
             searchText: parts.searchText,
             hasCodeBlock: Boolean(container.querySelector("pre, code")),
+            reply: replies.filter((reply) =>
+              sortByDocumentOrder(container, reply.element) < 0 &&
+              (!roots[index + 1] || sortByDocumentOrder(reply.element, roots[index + 1]) < 0)
+            ).at(-1) || null,
             isPlaceholder: parts.isPlaceholder
           };
         } catch (error) {
@@ -2292,9 +2438,7 @@
     const turnId =
       container.getAttribute("data-turn-id") ||
       container.getAttribute("data-turn-id-container");
-    const messageId =
-      container.querySelector("[data-message-id]")?.getAttribute("data-message-id") ||
-      container.getAttribute("data-message-id");
+    const messageId = getMessageId(container);
     const testId = container.getAttribute("data-testid");
 
     if (turnId) {
@@ -2315,7 +2459,7 @@
   function updateCounts() {
     const favorites = getFavoriteCount();
     countElement.textContent = entries.length
-      ? i18n.t("questionFavoriteCount", { count: entries.length, favorites })
+      ? i18n.t(compactMode ? "questionCount" : "questionFavoriteCount", { count: entries.length, favorites })
       : i18n.t("noQuestionsCount");
     collapsedCountElement.textContent =
       entries.length > 99 ? "99+" : String(entries.length);
@@ -2427,6 +2571,9 @@
   }
 
   function getVisibleEntries() {
+    if (compactMode) {
+      return entries;
+    }
     const activeLabelId = getActiveLabelId();
     return entries.filter((entry) => {
       const filterMatches =
@@ -2439,6 +2586,9 @@
   }
 
   function renderLabelPills(entry, body) {
+    if (compactMode) {
+      return;
+    }
     const assignedLabels = (entry.labelIds || []).map(getLabelById).filter(Boolean);
     if (!assignedLabels.length) {
       return;
@@ -2515,10 +2665,10 @@
       "--category-color",
       getCategoryColor(autoClassificationEnabled ? entry.category : "other")
     );
-    card.classList.toggle("is-batch", batchMode);
-    card.classList.toggle("is-selected", selectedEntryKeys.has(entry.key));
+    card.classList.toggle("is-batch", batchMode && !compactMode);
+    card.classList.toggle("is-selected", !compactMode && selectedEntryKeys.has(entry.key));
 
-    if (batchMode) {
+    if (batchMode && !compactMode) {
       const checkbox = document.createElement("input");
       checkbox.className = "selection-checkbox";
       checkbox.type = "checkbox";
@@ -2609,6 +2759,23 @@
       actions.appendChild(categorySelect);
     }
     card.append(mainButton, actions);
+    if (entry.reply) {
+      const replyButton = document.createElement("button");
+      replyButton.className = "reply-summary";
+      replyButton.type = "button";
+      replyButton.dataset.action = "reply";
+      replyButton.dataset.index = String(entry.index);
+      replyButton.title = entry.reply.text;
+      replyButton.setAttribute("aria-label", i18n.t("jumpToReply"));
+      const heading = document.createElement("span");
+      heading.className = "reply-heading";
+      heading.textContent = i18n.t("replySummary");
+      const summary = document.createElement("span");
+      summary.className = "reply-text";
+      summary.textContent = entry.reply.summary;
+      replyButton.append(heading, summary);
+      card.appendChild(replyButton);
+    }
     return card;
   }
 
@@ -2753,7 +2920,7 @@
       return;
     }
 
-    const shouldGroup = autoClassificationEnabled && !getActiveLabelId();
+    const shouldGroup = !compactMode && autoClassificationEnabled && !getActiveLabelId();
     if (!shouldGroup) {
       visibleEntries.forEach((entry) => listElement.appendChild(createEntryCard(entry)));
       return;
@@ -2768,18 +2935,11 @@
   }
 
   function computePageSignature(messages) {
-    const keyList = messages.map((entry) => entry.key);
-    const lastSummaries = messages.slice(-3).map((entry) => {
-      const summary = normalizeInlineText(entry.searchText || entry.displayText).slice(0, 120);
-      return `${entry.key}:${summary}`;
-    });
-
     return JSON.stringify({
       url: location.href,
-      userCount: messages.length,
-      keys: keyList,
-      lastSummaries,
-      turnCount: document.querySelectorAll(SELECTORS.conversationTurn).length
+      // Include every displayed question and reply so streaming updates and
+      // historical edits refresh even when the number of messages is unchanged.
+      messages: messages.map((entry) => [entry.key, entry.fullText, entry.reply?.text || ""])
     });
   }
 
@@ -2945,6 +3105,7 @@
         turnId: nextEntry.turnId || currentEntry.turnId || "",
         messageId: nextEntry.messageId || currentEntry.messageId || "",
         testId: nextEntry.testId || currentEntry.testId || "",
+        reply: nextEntry.reply || currentEntry.reply || null,
         turnOrder:
           getEntryConversationTurnOrder(nextEntry) ?? getEntryConversationTurnOrder(currentEntry),
         isPlaceholder: false,
@@ -3079,31 +3240,48 @@
     const [kind, ...rest] = entry.key.split(":");
     const rawValue = rest.join(":");
     const value = escapeAttributeValue(rawValue);
+    const scope = getConversationRoot();
 
-    if (!rawValue) {
+    if (!rawValue || !scope) {
       return null;
     }
 
     if (kind === "message") {
-      const messageNode = document.querySelector(`[data-message-id="${value}"]`);
+      const messageNode = scope.querySelector(
+        `[data-message-id="${value}"], [data-chatgpt-search-message-ids~="${value}"], [data-turn-key="${value}"]`
+      );
+      if (messageNode?.matches("[data-turn-key]")) {
+        return messageNode.querySelector(SELECTORS.userUnit) || messageNode.querySelector(SELECTORS.userBubble);
+      }
       return messageNode ? findMessageContainer(messageNode) : null;
     }
 
     if (kind === "turn") {
-      return document.querySelector(
+      return scope.querySelector(
         `[data-turn-id="${value}"], [data-turn-id-container="${value}"]`
       );
     }
 
     if (kind === "test") {
-      return document.querySelector(`[data-testid="${value}"]`);
+      return scope.querySelector(`[data-testid="${value}"]`);
     }
 
     return null;
   }
 
-  function jumpToEntry(index) {
+  function jumpToEntry(index, toReply = false) {
     const entry = entries[index];
+    if (toReply) {
+      // A virtualized answer can be replaced independently of its question.
+      const current = scanUserMessages().find((item) => item.key === entry?.key);
+      const replyElement = current?.reply?.element;
+      if (replyElement?.isConnected) {
+        highlightElement(replyElement);
+      } else {
+        scheduleRefresh(true);
+      }
+      return;
+    }
     if (!entry?.element?.isConnected) {
       const currentElement = findCurrentElementForEntry(entry);
       if (currentElement) {
@@ -3123,12 +3301,16 @@
       return;
     }
 
+    highlightElement(entry.element);
+  }
+
+  function highlightElement(element) {
     ensureHighlightStyle();
-    entry.element.scrollIntoView({ behavior: "smooth", block: "center" });
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
     scheduleRefresh(false);
-    entry.element.classList.add(HIGHLIGHT_CLASS);
+    element.classList.add(HIGHLIGHT_CLASS);
     window.setTimeout(() => {
-      entry.element.classList.remove(HIGHLIGHT_CLASS);
+      element.classList.remove(HIGHLIGHT_CLASS);
     }, 1600);
   }
 
@@ -3162,6 +3344,7 @@
     dragGrip.title = i18n.t("drag");
     refreshButton.title = i18n.t("refresh");
     refreshButton.setAttribute("aria-label", refreshButton.title);
+    updateCompactButton();
     resizeHandle.title = i18n.t("resize");
     languageSelect.setAttribute("aria-label", i18n.t("languageLabel"));
 
@@ -3189,6 +3372,23 @@
     toggleButton.title = i18n.t(collapsed ? "expand" : "collapse");
     toggleButton.setAttribute("aria-label", toggleButton.title);
     applyLayout(false);
+  }
+
+  function updateCompactButton() {
+    simpleToggle.textContent = i18n.t(compactMode ? "fullModeShort" : "compactModeShort");
+    simpleToggle.title = i18n.t(compactMode ? "showFullMode" : "showCompactMode");
+    simpleToggle.setAttribute("aria-label", simpleToggle.title);
+    simpleToggle.setAttribute("aria-pressed", String(compactMode));
+  }
+
+  function setCompactMode(nextCompact, shouldSave = false) {
+    compactMode = Boolean(nextCompact);
+    navigatorElement.classList.toggle("is-compact", compactMode);
+    updateCompactButton();
+    render();
+    if (shouldSave) {
+      void chrome.storage.local.set({ [COMPACT_STORAGE_KEY]: compactMode }).catch(() => {});
+    }
   }
 
   function startDrag(event) {
@@ -3469,10 +3669,16 @@
       return;
     }
 
+    const replyButton = target?.closest(".reply-summary");
+    if (replyButton) {
+      jumpToEntry(Number(replyButton.dataset.index), true);
+      return;
+    }
+
     const mainButton = target?.closest(".item-main");
     if (mainButton) {
       const index = Number(mainButton.dataset.index);
-      if (batchMode) {
+      if (batchMode && !compactMode) {
         const entry = entries[index];
         toggleBatchEntry(index, !selectedEntryKeys.has(entry?.key));
       } else {
@@ -3620,6 +3826,10 @@
     refresh(true);
   });
 
+  simpleToggle.addEventListener("click", () => {
+    setCompactMode(!compactMode, true);
+  });
+
   headerElement.addEventListener("pointerdown", startDrag);
   resizeHandle.addEventListener("pointerdown", startResize);
 
@@ -3691,6 +3901,7 @@
   await loadOrganizerState();
   languageSelect.value = i18n.getPreference();
   autoToggle.checked = autoClassificationEnabled;
+  setCompactMode(compactMode);
   setCollapsed(false);
   refresh(true);
   startPeriodicRefresh();
